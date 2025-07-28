@@ -15,7 +15,7 @@ public class GameApi {
     @GetMapping("/matchmaking")
     public ResponseEntity<Game> getPlayersGame(@RequestParam String playerId) {
         try {
-            Game existingGame = gameService.getGameStatusByPlayerId(playerId);
+            Game existingGame = gameService.getGameByPlayerId(playerId);
             return ResponseEntity.ok(existingGame);
         } catch (IllegalArgumentException e) {
             gameService.markPlayerLookingForGame(playerId, true);
@@ -24,12 +24,9 @@ public class GameApi {
     }
 
     @PostMapping("/move")
-    public ResponseEntity<String> makeMove(@RequestParam String playerId, @RequestParam int move) {
+    public ResponseEntity<String> makeMove(@RequestParam String gameId, @RequestParam String playerId, @RequestParam int move) {
         try {
-            // First get the game for this player
-            // TODO pass the game ID from the request
-            Game game = gameService.getGameStatusByPlayerId(playerId);
-            gameService.makeMove(game.getId(), playerId, move);
+            gameService.makeMove(gameId, playerId, move);
             return ResponseEntity.ok("Move processed successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

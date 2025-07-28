@@ -2,11 +2,6 @@ package com.shimmy.gameofthree.server.application;
 
 import com.shimmy.gameofthree.server.domain.Game;
 import com.shimmy.gameofthree.server.domain.Player;
-import com.shimmy.gameofthree.server.domain.event.ClientMoveEvent;
-import com.shimmy.gameofthree.server.domain.event.GameEndedEvent;
-import com.shimmy.gameofthree.server.domain.event.GameEvent;
-import com.shimmy.gameofthree.server.domain.event.GameStartedEvent;
-import com.shimmy.gameofthree.server.infrastructure.publisher.KafkaGamePublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -26,8 +20,6 @@ public class GameService {
     private GameRepository gameRepository;
     @Autowired
     private PlayerRepository playerRepository;
-    @Autowired
-    private KafkaGamePublisher kafkaGamePublisher;
 
     Game createGame() {
         log.info("Creating a new game");
@@ -68,17 +60,8 @@ public class GameService {
         }
         game.setStatus(Game.GameStatus.IN_PROGRESS);
         game.setCurrentPlayer(game.getPlayers().get(new Random().nextInt(game.getPlayers().size())));
-        game = gameRepository.save(game);
+        gameRepository.save(game);
         log.info("Game {} started. Current player: {}", gameId, game.getCurrentPlayer());
-        // Emit GameEvent<GameStartedEvent>
-        GameStartedEvent startedEvent = new GameStartedEvent(game.getId(), game.getPlayers());
-        GameEvent<GameStartedEvent> event = new GameEvent<>(
-                UUID.randomUUID().toString(),
-                game.getId(),
-                "GAME_STARTED",
-                startedEvent
-        );
-        kafkaGamePublisher.emit(event);
     }
 
     void endGame(String gameId, String winnerId) {
@@ -104,17 +87,6 @@ public class GameService {
     public void makeMove(String gameId, String playerId, int move) {
         log.info("Player {} making move: {} in game {}", playerId, move, gameId);
 
-        // Emit ClientMoveEvent first
-        // TODO send even later
-        ClientMoveEvent moveEvent = new ClientMoveEvent(gameId, playerId, move);
-        GameEvent<ClientMoveEvent> clientMoveGameEvent = new GameEvent<>(
-                UUID.randomUUID().toString(),
-                gameId,
-                "CLIENT_MOVE",
-                moveEvent
-        );
-        kafkaGamePublisher.emit(clientMoveGameEvent);
-
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
         Player player = playerRepository.findById(playerId)
@@ -128,30 +100,33 @@ public class GameService {
             log.error("It's not player {}'s turn. Current player: {}", playerId, game.getCurrentPlayer());
             throw new IllegalStateException("It's not your turn to play.");
         }
-        if (move != 1 && move != -1) {
-            log.error("Invalid move: {}. Player {} can only move 1 or -1.", move, playerId);
-            throw new IllegalArgumentException("Invalid move. Player can only move 1 or -1.");
+        if (move != 1 && move != 0 && move != -1) {
+            log.error("Invalid move: {}. Player {} can only move -1, 0, or 1.", move, playerId);
+            throw new IllegalArgumentException("Invalid move. Player can only move -1, 0, or 1.");
         }
 
-        // Process the move: add the move value to current number and divide by 3
-        int newNumber = (game.getCurrentNumber() + move) / 3;
+        // Calculate the number after adding the move
+        int numberAfterMove = game.getCurrentNumber() + move;
+
+        // Validate that the number is divisible by 3 after the move
+        if (numberAfterMove % 3 != 0) {
+            log.error("Invalid move: {}. Number {} + {} = {} is not divisible by 3.",
+                    move, game.getCurrentNumber(), move, numberAfterMove);
+            throw new IllegalArgumentException("Move must result in a number divisible by 3.");
+        }
+
+        // Process the move: divide by 3
+        int newNumber = numberAfterMove / 3;
         game.setCurrentNumber(newNumber);
+
+        log.info("Move processed: {} + {} = {} ÷ 3 = {}",
+                game.getCurrentNumber() - newNumber * 3 + move, move, numberAfterMove, newNumber);
 
         // Check if game is won (number reaches 1)
         if (newNumber == 1) {
             game.setStatus(Game.GameStatus.COMPLETED);
             game.setCurrentPlayer(null);
-            game = gameRepository.save(game);
-
-            // Emit GameEndedEvent
-            GameEndedEvent endedEvent = new GameEndedEvent(gameId, player);
-            GameEvent<GameEndedEvent> gameEndedGameEvent = new GameEvent<>(
-                    UUID.randomUUID().toString(),
-                    gameId,
-                    "GAME_ENDED",
-                    endedEvent
-            );
-            kafkaGamePublisher.emit(gameEndedGameEvent);
+            gameRepository.save(game);
 
             log.info("Game {} ended. Winner: {}. Final number: {}", gameId, playerId, newNumber);
         } else {
@@ -176,7 +151,7 @@ public class GameService {
         return game.getStatus();
     }
 
-    public Game getGameStatusByPlayerId(String playerId) {
+    public Game getGameByPlayerId(String playerId) {
         log.info("Fetching game state for player ID: {}", playerId);
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new IllegalArgumentException("Player not found"));

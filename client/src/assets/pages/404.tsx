@@ -1,0 +1,46 @@
+const NotFound = () => {
+  return (
+    <div className="h-screen flex items-center justify-center bg-[#282828] text-[#ebdbb2] font-pixel">
+      <div
+        className="max-w-md w-full p-8 bg-[#3c3836] shadow-lg border-2 border-[#504945] text-center"
+        style={{
+          clipPath:
+            "polygon(0% 4px, 4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px))",
+        }}
+      >
+        <h1 className="text-game-3xl text-[#fb4934] mb-6">404 Not Found</h1>
+
+        <div
+          className="border-2 border-[#504945] p-2 mb-6"
+          style={{
+            clipPath:
+              "polygon(0% 2px, 2px 0%, calc(100% - 2px) 0%, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0% calc(100% - 2px))",
+          }}
+        >
+          <img
+            src="https://media.tenor.com/BiUtqfsTcqcAAAAC/memory-no-memory.gif"
+            alt="404 Not Found"
+            className="w-full"
+          />
+        </div>
+
+        <p className="text-game-lg text-[#fabd2f] mb-8">
+          The page you're looking for doesn't exist in this game universe.
+        </p>
+
+        <a
+          href="/play"
+          className="inline-block px-8 py-4 bg-[#8ec07c] hover:bg-[#689d6a] text-[#282828] transition-colors duration-300 border-2 border-[#689d6a] text-game-lg font-bold"
+          style={{
+            clipPath:
+              "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
+          }}
+        >
+          Play Game Instead
+        </a>
+      </div>
+    </div>
+  );
+};
+
+export default NotFound;
