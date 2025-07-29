@@ -149,17 +149,6 @@ const Game = () => {
 
     try {
       const response = await fetch(getApiUrl(`/game/${gameId}`));
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Game not found - it may have been cleaned up
-          console.log("Game not found, returning to play screen");
-          localStorage.removeItem("gameId");
-          localStorage.removeItem("playerId");
-          navigate("/play");
-          return;
-        }
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
       if (response.ok) {
         // Check if response is empty
         const text = await response.text();
