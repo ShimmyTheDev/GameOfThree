@@ -2,18 +2,20 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json ./
-COPY package-lock.json* ./
+# Install deps from lockfile (faster, reproducible)
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application
+# Copy the rest
 COPY . .
 
-# Expose the port the app will run on
+ENV PORT=5173 \
+    HOST=0.0.0.0 \
+    DOMAIN=got.shimmythe.dev \
+    VITE_API_BASE_URL=https://got.shimmythe.dev/api \
+    NODE_ENV=development
+
 EXPOSE 5173
 
-# Start the application in development mode
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Start Vite dev server; respects HOST/PORT overrides
+CMD ["sh", "-c", "npm run dev -- --host ${HOST} --port ${PORT}"]
