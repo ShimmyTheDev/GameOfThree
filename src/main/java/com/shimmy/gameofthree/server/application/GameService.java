@@ -160,6 +160,10 @@ public class GameService {
                 .orElseThrow(() -> new IllegalArgumentException("Player not found"));
         Game game = gameRepository.findByPlayersContaining(player)
                 .orElseThrow(() -> new IllegalArgumentException("No game found for player ID: " + playerId));
+        if (game.getStatus() == Game.GameStatus.COMPLETED) {
+            return null; // Game is completed, return null
+        }
+
         log.info("Game state for player {}: {}", playerId, game);
         return game;
     }
