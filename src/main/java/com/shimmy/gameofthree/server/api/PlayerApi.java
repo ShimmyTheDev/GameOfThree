@@ -23,6 +23,15 @@ public class PlayerApi {
         return Map.of("playerId", player.getId());
     }
 
+    @PostMapping("/json")
+    @ResponseBody
+    public Map<String, String> createPlayerJson(@RequestBody Map<String, String> request) {
+        String playerName = request.get("playerName");
+        log.info("Creating player with name (JSON): {}", playerName);
+        Player player = playerService.createPlayer(playerName);
+        return Map.of("playerId", player.getId());
+    }
+
     @GetMapping("/{playerId}")
     @ResponseBody
     public Player getPlayer(@PathVariable String playerId) {
