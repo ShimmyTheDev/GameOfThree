@@ -37,7 +37,7 @@ const Game = () => {
   // Function to get player data
   const getPlayerData = useCallback(async (playerIdToFetch: string) => {
     try {
-      const response = await fetch(getApiUrl(`/api/player/${playerIdToFetch}`));
+      const response = await fetch(getApiUrl(`/player/${playerIdToFetch}`));
       if (response.ok) {
         return await response.json();
       }
@@ -148,7 +148,7 @@ const Game = () => {
     if (!gameId) return;
 
     try {
-      const response = await fetch(getApiUrl(`/api/game/${gameId}`));
+      const response = await fetch(getApiUrl(`/game/${gameId}`));
       if (response.ok) {
         // Check if response is empty
         const text = await response.text();
@@ -187,7 +187,7 @@ const Game = () => {
     try {
       setIsMatchmaking(true);
       const response = await fetch(
-        getApiUrl(`/api/game/matchmaking?playerId=${playerId}`)
+        getApiUrl(`/game/matchmaking?playerId=${playerId}`)
       );
 
       if (response.ok) {
@@ -307,7 +307,7 @@ const Game = () => {
 
       const response = await fetch(
         getApiUrl(
-          `/api/game/move?gameId=${gameId}&playerId=${playerId}&move=${move}`
+          `/game/move?gameId=${gameId}&playerId=${playerId}&move=${move}`
         ),
         {
           method: "POST",
