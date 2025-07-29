@@ -15,7 +15,7 @@ public class PlayerApi {
     @Autowired
     private PlayerService playerService;
 
-    @PostMapping("/")
+    @PostMapping(value = "/", consumes = "application/x-www-form-urlencoded")
     @ResponseBody
     public Map<String, String> createPlayer(@RequestParam("playerName") String playerName) {
         log.info("Creating player with name: {}", playerName);
@@ -23,7 +23,7 @@ public class PlayerApi {
         return Map.of("playerId", player.getId());
     }
 
-    @PostMapping("/json")
+    @PostMapping(value = "/", consumes = "application/json")
     @ResponseBody
     public Map<String, String> createPlayerJson(@RequestBody Map<String, String> request) {
         String playerName = request.get("playerName");
