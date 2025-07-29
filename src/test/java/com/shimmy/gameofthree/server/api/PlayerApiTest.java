@@ -37,9 +37,10 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenValidName_ShouldReturnPlayerId() {
         String playerName = "Test Player";
+        Map<String, String> request = Map.of("playerName", playerName);
         when(playerService.createPlayer(playerName)).thenReturn(testPlayer);
 
-        Map<String, String> response = playerApi.createPlayer(playerName);
+        Map<String, String> response = playerApi.createPlayer(request);
 
         assertNotNull(response);
         assertEquals("player1", response.get("playerId"));
@@ -51,12 +52,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenValidNameWithSpaces_ShouldReturnPlayerId() {
         String playerName = "John Doe";
+        Map<String, String> request = Map.of("playerName", playerName);
         Player playerWithSpaces = new Player();
         playerWithSpaces.setId("player2");
         playerWithSpaces.setName(playerName);
         when(playerService.createPlayer(playerName)).thenReturn(playerWithSpaces);
 
-        Map<String, String> response = playerApi.createPlayer(playerName);
+        Map<String, String> response = playerApi.createPlayer(request);
 
         assertNotNull(response);
         assertEquals("player2", response.get("playerId"));
@@ -66,12 +68,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenEmptyName_ShouldThrowException() {
         String playerName = "";
+        Map<String, String> request = Map.of("playerName", playerName);
         when(playerService.createPlayer(playerName))
                 .thenThrow(new IllegalArgumentException("Player name must be between 1 and 32 characters."));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerApi.createPlayer(playerName)
+                () -> playerApi.createPlayer(request)
         );
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
         verify(playerService).createPlayer(playerName);
@@ -79,27 +82,28 @@ class PlayerApiTest {
 
     @Test
     void createPlayer_WhenNullName_ShouldThrowException() {
-        String playerName = null;
-        when(playerService.createPlayer(playerName))
+        Map<String, String> request = Map.of();
+        when(playerService.createPlayer(null))
                 .thenThrow(new IllegalArgumentException("Player name must be between 1 and 32 characters."));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerApi.createPlayer(playerName)
+                () -> playerApi.createPlayer(request)
         );
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
-        verify(playerService).createPlayer(playerName);
+        verify(playerService).createPlayer(null);
     }
 
     @Test
     void createPlayer_WhenNameTooLong_ShouldThrowException() {
         String playerName = "This is a very long player name that exceeds the maximum allowed length of 32 characters";
+        Map<String, String> request = Map.of("playerName", playerName);
         when(playerService.createPlayer(playerName))
                 .thenThrow(new IllegalArgumentException("Player name must be between 1 and 32 characters."));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerApi.createPlayer(playerName)
+                () -> playerApi.createPlayer(request)
         );
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
         verify(playerService).createPlayer(playerName);
@@ -108,12 +112,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenNameExactly32Characters_ShouldReturnPlayerId() {
         String playerName = "12345678901234567890123456789012"; // exactly 32 characters
+        Map<String, String> request = Map.of("playerName", playerName);
         Player playerWith32CharName = new Player();
         playerWith32CharName.setId("player3");
         playerWith32CharName.setName(playerName);
         when(playerService.createPlayer(playerName)).thenReturn(playerWith32CharName);
 
-        Map<String, String> response = playerApi.createPlayer(playerName);
+        Map<String, String> response = playerApi.createPlayer(request);
 
         assertNotNull(response);
         assertEquals("player3", response.get("playerId"));
@@ -123,12 +128,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenServiceThrowsRuntimeException_ShouldPropagateException() {
         String playerName = "Test Player";
+        Map<String, String> request = Map.of("playerName", playerName);
         when(playerService.createPlayer(playerName))
                 .thenThrow(new RuntimeException("Database connection failed"));
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> playerApi.createPlayer(playerName)
+                () -> playerApi.createPlayer(request)
         );
         assertEquals("Database connection failed", exception.getMessage());
         verify(playerService).createPlayer(playerName);
@@ -226,12 +232,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenSpecialCharactersInName_ShouldReturnPlayerId() {
         String playerName = "Player123!@#";
+        Map<String, String> request = Map.of("playerName", playerName);
         Player specialCharPlayer = new Player();
         specialCharPlayer.setId("player4");
         specialCharPlayer.setName(playerName);
         when(playerService.createPlayer(playerName)).thenReturn(specialCharPlayer);
 
-        Map<String, String> response = playerApi.createPlayer(playerName);
+        Map<String, String> response = playerApi.createPlayer(request);
 
         assertNotNull(response);
         assertEquals("player4", response.get("playerId"));
@@ -241,12 +248,13 @@ class PlayerApiTest {
     @Test
     void createPlayer_WhenUnicodeCharactersInName_ShouldReturnPlayerId() {
         String playerName = "Jöhn Döe 🎮";
+        Map<String, String> request = Map.of("playerName", playerName);
         Player unicodePlayer = new Player();
         unicodePlayer.setId("player5");
         unicodePlayer.setName(playerName);
         when(playerService.createPlayer(playerName)).thenReturn(unicodePlayer);
 
-        Map<String, String> response = playerApi.createPlayer(playerName);
+        Map<String, String> response = playerApi.createPlayer(request);
 
         assertNotNull(response);
         assertEquals("player5", response.get("playerId"));

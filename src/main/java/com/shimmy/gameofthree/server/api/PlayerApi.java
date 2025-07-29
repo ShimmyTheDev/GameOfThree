@@ -17,7 +17,7 @@ public class PlayerApi {
 
     @PostMapping(value = "/")
     @ResponseBody
-    public Map<String, String> createPlayerJson(@RequestBody Map<String, String> request) {
+    public Map<String, String> createPlayer(@RequestBody Map<String, String> request) {
         String playerName = request.get("playerName");
         log.info("Creating player with name (JSON): {}", playerName);
         Player player = playerService.createPlayer(playerName);
