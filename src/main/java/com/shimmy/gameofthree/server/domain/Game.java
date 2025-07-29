@@ -3,6 +3,7 @@ package com.shimmy.gameofthree.server.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,7 @@ public class Game {
     private Player currentPlayer;
     private int currentNumber;
     private GameStatus status = GameStatus.WAITING_FOR_PLAYERS;
+    private Instant lastUpdated;
 
     @PrePersist
     public void generateId() {

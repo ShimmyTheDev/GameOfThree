@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -118,6 +119,7 @@ public class GameService {
         // Process the move: divide by 3
         int newNumber = numberAfterMove / 3;
         game.setCurrentNumber(newNumber);
+        game.setLastUpdated(Instant.now());
 
         log.info("Move processed: {} + {} = {} ÷ 3 = {}",
                 game.getCurrentNumber() - newNumber * 3 + move, move, numberAfterMove, newNumber);
@@ -207,6 +209,37 @@ public class GameService {
 
         log.info("Matchmaking successful. Game created with ID: {} and starting number: {}",
                 game.getId(), game.getCurrentNumber());
+    }
+
+    @Scheduled(fixedRate = 3600000)
+        // runs every hour
+    void cleanUpCompletedGames() {
+        log.info("Running cleanup for completed games");
+        List<Game> completedGames = gameRepository.findByStatus(Game.GameStatus.COMPLETED);
+        log.info("Found {} completed games to clean up", completedGames.size());
+        for (Game game : completedGames) {
+            log.info("Deleting completed game with ID: {}", game.getId());
+            gameRepository.delete(game);
+        }
+        log.info("Cleanup of completed games finished");
+    }
+
+    @Scheduled(fixedRate = 10000)
+    void completeInactiveGames() {
+        log.info("Running cleanup for inactive games");
+        Instant threshold = Instant.now().minusSeconds(60); // Games inactive for more than 60 seconds
+        List<Game> inactiveGames = gameRepository.findByLastUpdatedBefore(threshold);
+        log.info("Found {} inactive games to delete", inactiveGames.size());
+        for (Game game : inactiveGames) {
+            log.info("Ending inactive game with ID: {}", game.getId());
+            endGame(game.getId(), game.getCurrentPlayer().getId());
+            Player winner = game.getPlayers().stream()
+                    .filter(p -> !p.getId().equals(game.getCurrentPlayer().getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No other player found"));
+            endGame(game.getId(), winner.getId());
+        }
+        log.info("Cleanup of inactive games finished");
     }
 
     void deleteGame(String gameId) {
