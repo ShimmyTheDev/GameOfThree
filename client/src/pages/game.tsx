@@ -286,9 +286,9 @@ const Game = () => {
   // Additional cleanup on unmount
   useEffect(() => {
     return () => {
-      // Don't clear playerId here - we want to keep the player ID
-      // between navigation but we do want to clear it when appropriate
-      // like when clicking "Cancel" during matchmaking
+      // Clear localStorage when leaving the game page
+      localStorage.removeItem("gameId");
+      localStorage.removeItem("playerId");
     };
   }, []);
 

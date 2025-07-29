@@ -199,6 +199,7 @@ public class GameService {
 
         // Set initial random number for the game (between 10 and 100)
         game.setCurrentNumber(new Random().nextInt(91) + 10); // Random number between 10-100
+        game.setLastUpdated(Instant.now());
 
         game = gameRepository.save(game);
 
