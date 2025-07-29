@@ -6,9 +6,9 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import SEOHead from "./components/SEOHead.tsx";
 
 // Lazy load routes for better performance and to support preloading
-const Play = lazy(() => import("./assets/pages/play.tsx"));
-const Game = lazy(() => import("./assets/pages/game.tsx"));
-const NotFound = lazy(() => import("./assets/pages/404.tsx"));
+const Play = lazy(() => import("./pages/play.tsx"));
+const Game = lazy(() => import("./pages/game.tsx"));
+const NotFound = lazy(() => import("./pages/404.tsx"));
 
 // SEO Configuration - Used as reference for index.html
 // SEO metadata is now directly included in index.html

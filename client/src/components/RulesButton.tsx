@@ -24,7 +24,6 @@ const RulesButton: React.FC<RulesButtonProps> = ({ className }) => {
             className="relative max-w-2xl w-full bg-[#3c3836] border-2 border-[#504945] p-6 max-h-[80vh] overflow-y-auto"
             style={{}}
           >
-            {/* Pixel Art X button */}
             <button
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 w-8 h-8 text-[#fb4934] hover:text-[#cc241d] transition-colors"
@@ -44,7 +43,7 @@ const RulesButton: React.FC<RulesButtonProps> = ({ className }) => {
                 </h3>
                 <p>
                   The goal of "Game of Three" is to reach exactly{" "}
-                  <strong className="text-[#fabd2f]">0</strong> before your
+                  <strong className="text-[#fabd2f]">1</strong> before your
                   opponent.
                 </p>
               </section>
@@ -78,7 +77,7 @@ const RulesButton: React.FC<RulesButtonProps> = ({ className }) => {
                   </li>
                   <li>
                     Players take turns until someone reaches exactly{" "}
-                    <strong className="text-[#fabd2f]">0</strong>.
+                    <strong className="text-[#fabd2f]">1</strong>.
                   </li>
                 </ul>
               </section>
@@ -135,12 +134,7 @@ const RulesButton: React.FC<RulesButtonProps> = ({ className }) => {
                     Player 2: Divides by 3 to get{" "}
                     <strong className="text-[#fabd2f]">1</strong>
                   </p>
-                  <p>
-                    Player 1: Adds{" "}
-                    <strong className="text-[#fabd2f]">-1</strong> to make{" "}
-                    <strong className="text-[#fabd2f]">0</strong>
-                  </p>
-                  <p>Player 1 wins!</p>
+                  <p>Player 2 wins by reaching exactly 1!</p>
                 </div>
               </section>
 

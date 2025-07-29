@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import RulesButton from "../../components/RulesButton";
-import { getApiUrl } from "../../services/api";
+import RulesButton from "../components/RulesButton";
+import { getApiUrl } from "../services/api";
 
 const Play = () => {
   const [playerName, setPlayerName] = useState("");
@@ -106,13 +106,7 @@ const Play = () => {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-[#282828] text-[#ebdbb2] font-pixel">
-      <div
-        className="max-w-md w-full p-8 bg-[#3c3836] shadow-lg border-2 border-[#504945]"
-        style={{
-          clipPath:
-            "polygon(0% 4px, 4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px))",
-        }}
-      >
+      <div className="max-w-md w-full p-8 bg-[#3c3836] shadow-lg border-2 border-[#504945]">
         <h1 className="mb-8 text-center text-[#fb4934] text-game-2xl">
           Game of Three
         </h1>
@@ -136,10 +130,6 @@ const Play = () => {
               className={`w-full px-4 py-3 bg-[#1d2021] border-2 ${
                 nameError ? "border-[#fb4934]" : "border-[#504945]"
               } focus:outline-none focus:ring-2 focus:ring-[#fabd2f] text-[#ebdbb2] text-game-base`}
-              style={{
-                clipPath:
-                  "polygon(0% 2px, 2px 0%, calc(100% - 2px) 0%, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0% calc(100% - 2px))",
-              }}
               placeholder="Enter your name"
               required
             />
@@ -157,10 +147,6 @@ const Play = () => {
                 ? "bg-[#504945] cursor-not-allowed border-[#3c3836]"
                 : "bg-[#8ec07c] hover:bg-[#689d6a] border-[#689d6a]"
             } text-[#282828] transition-colors duration-300 border-2 text-game-lg font-bold`}
-            style={{
-              clipPath:
-                "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-            }}
             disabled={!playerName.trim() || isMatchmaking}
           >
             <span className={isMatchmaking ? "animate-pulse" : ""}>
@@ -171,11 +157,11 @@ const Play = () => {
       </div>
 
       <div className="mt-8 flex gap-6">
-        <RulesButton className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base [clip-path:polygon(0%_2px,2px_0%,calc(100%-2px)_0%,100%_2px,100%_calc(100%-2px),calc(100%-2px)_100%,2px_100%,0%_calc(100%-2px))]" />
+        <RulesButton className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base" />
         <a
           target="_blank"
           href="https://github.com/ShimmyTheDev"
-          className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base [clip-path:polygon(0%_2px,2px_0%,calc(100%-2px)_0%,100%_2px,100%_calc(100%-2px),calc(100%-2px)_100%,2px_100%,0%_calc(100%-2px))]"
+          className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base"
         >
           Author
         </a>

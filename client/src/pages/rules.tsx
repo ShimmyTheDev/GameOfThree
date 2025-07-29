@@ -69,13 +69,7 @@ const RulesPopup: React.FC<RulesPopupProps> = ({ isOpen, onClose }) => {
 
           <section>
             <h3 className="text-[#b8bb26] text-game-lg mb-2">Example</h3>
-            <div
-              className="bg-[#282828] p-3 border border-[#504945]"
-              style={{
-                clipPath:
-                  "polygon(0% 2px, 2px 0%, calc(100% - 2px) 0%, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0% calc(100% - 2px))",
-              }}
-            >
+            <div className="bg-[#282828] p-3 border border-[#504945]">
               <p>
                 Starting number: <strong className="text-[#fabd2f]">56</strong>
               </p>

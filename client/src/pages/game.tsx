@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
-import RulesButton from "../../components/RulesButton";
-import { getApiUrl } from "../../services/api";
+import RulesButton from "../components/RulesButton";
+import { getApiUrl } from "../services/api";
 
 interface Player {
   id: string;
@@ -350,13 +350,7 @@ const Game = () => {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-[#282828] text-[#ebdbb2] font-pixel">
-      <div
-        className="w-full max-w-3xl p-6 bg-[#3c3836] shadow-lg border-2 border-[#504945]"
-        style={{
-          clipPath:
-            "polygon(0% 4px, 4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px))",
-        }}
-      >
+      <div className="w-full max-w-3xl p-6 bg-[#3c3836] shadow-lg border-2 border-[#504945]">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-[#fb4934] text-game-2xl">Game of Three</h1>
           {!isMatchmaking && (
@@ -383,10 +377,6 @@ const Game = () => {
                   navigate("/play");
                 }}
                 className="px-6 py-2 bg-[#3c3836] text-[#ebdbb2] border-2 border-[#504945] hover:bg-[#504945] transition-colors text-game-base"
-                style={{
-                  clipPath:
-                    "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-                }}
               >
                 Cancel
               </button>
@@ -403,13 +393,7 @@ const Game = () => {
                 </div>
               </div>
 
-              <div
-                className="w-full bg-[#282828] p-4 text-center border border-[#504945] mb-4"
-                style={{
-                  clipPath:
-                    "polygon(0% 2px, 2px 0%, calc(100% - 2px) 0%, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0% calc(100% - 2px))",
-                }}
-              >
+              <div className="w-full bg-[#282828] p-4 text-center border border-[#504945] mb-4">
                 <span
                   className={`${
                     gameState.gameStatus === "won"
@@ -454,10 +438,6 @@ const Game = () => {
                             ? "border-[#689d6a] bg-[#282828] text-[#8ec07c] hover:bg-[#3c3836]"
                             : "border-[#504945] bg-[#282828] text-[#504945] opacity-50 cursor-not-allowed"
                         } transition-colors`}
-                        style={{
-                          clipPath:
-                            "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-                        }}
                       >
                         {action > 0 ? `+${action}` : action}
                       </button>
@@ -469,10 +449,6 @@ const Game = () => {
                       <button
                         onClick={handleConfirmMove}
                         className="px-6 py-2 bg-[#8ec07c] text-[#282828] border-2 border-[#689d6a] hover:bg-[#689d6a] transition-colors text-game-lg"
-                        style={{
-                          clipPath:
-                            "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-                        }}
                       >
                         Confirm Move
                       </button>
@@ -502,10 +478,6 @@ const Game = () => {
                       window.location.reload();
                     }}
                     className="px-6 py-2 bg-[#8ec07c] text-[#282828] border-2 border-[#689d6a] hover:bg-[#689d6a] transition-colors text-game-lg"
-                    style={{
-                      clipPath:
-                        "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-                    }}
                   >
                     Play Again
                   </button>
@@ -516,10 +488,6 @@ const Game = () => {
                       localStorage.removeItem("gameId");
                     }}
                     className="px-6 py-2 bg-[#3c3836] text-[#ebdbb2] border-2 border-[#504945] hover:bg-[#504945] transition-colors text-game-lg"
-                    style={{
-                      clipPath:
-                        "polygon(0% 3px, 3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px))",
-                    }}
                   >
                     Main Menu
                   </Link>
@@ -532,11 +500,11 @@ const Game = () => {
 
       {/* Rules and Author links */}
       <div className="mt-6 flex gap-6 justify-center">
-        <RulesButton className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base [clip-path:polygon(0%_2px,2px_0%,calc(100%-2px)_0%,100%_2px,100%_calc(100%-2px),calc(100%-2px)_100%,2px_100%,0%_calc(100%-2px))]" />
+        <RulesButton className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base" />
         <a
           target="_blank"
           href="https://github.com/ShimmyTheDev"
-          className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base [clip-path:polygon(0%_2px,2px_0%,calc(100%-2px)_0%,100%_2px,100%_calc(100%-2px),calc(100%-2px)_100%,2px_100%,0%_calc(100%-2px))]"
+          className="px-4 py-2 bg-[#3c3836] hover:bg-[#504945] text-[#ebdbb2] transition-colors duration-300 border-2 border-[#504945] text-game-base"
         >
           Author
         </a>
