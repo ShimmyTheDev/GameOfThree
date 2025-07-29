@@ -60,6 +60,7 @@ public class GameService {
             throw new IllegalStateException("Game cannot start with less than 2 players.");
         }
         game.setStatus(Game.GameStatus.IN_PROGRESS);
+        game.setLastUpdated(Instant.now());
         game.setCurrentPlayer(game.getPlayers().get(new Random().nextInt(game.getPlayers().size())));
         gameRepository.save(game);
         log.info("Game {} started. Current player: {}", gameId, game.getCurrentPlayer());
