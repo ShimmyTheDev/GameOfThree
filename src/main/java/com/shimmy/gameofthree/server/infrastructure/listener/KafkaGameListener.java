@@ -1,12 +1,11 @@
 package com.shimmy.gameofthree.server.infrastructure.listener;
 
 import com.shimmy.gameofthree.server.domain.event.GameEvent;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KafkaGameListener {
-    @KafkaListener(topics = "game-events", groupId = "game-of-three-group", containerFactory = "gameEventKafkaListenerContainerFactory")
+    //    @KafkaListener(topics = "game-events", groupId = "game-of-three-group", containerFactory = "gameEventKafkaListenerContainerFactory")
     public void onGameEvent(GameEvent<?> event) {
         switch (event.getType()) {
             case "client_move" -> onClientMoveEvent(event);
