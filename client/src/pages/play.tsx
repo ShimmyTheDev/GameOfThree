@@ -21,7 +21,7 @@ const Play = () => {
         navigate("/game");
       } else {
         // Check if player is already in a game
-        fetch(getApiUrl(`/api/game/matchmaking?playerId=${playerId}`))
+        fetch(getApiUrl(`/game/matchmaking?playerId=${playerId}`))
           .then((response) => {
             if (!response.ok) {
               throw new Error(`HTTP error! Status: ${response.status}`);
@@ -72,7 +72,7 @@ const Play = () => {
     setIsMatchmaking(true);
 
     // Call the API to create a player
-    fetch(getApiUrl("/api/player/"), {
+    fetch(getApiUrl("/player/"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: '{ "playerName": "' + encodeURIComponent(playerName.trim()) + '" }',

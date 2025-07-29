@@ -1,7 +1,7 @@
 // Base URL for API calls
 // Look for environment variable first, fall back to localhost if not provided
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 // Helper function to create full API URLs
 export const getApiUrl = (endpoint: string) => {

@@ -15,7 +15,7 @@ public class PlayerApi {
     @Autowired
     private PlayerService playerService;
 
-    @PostMapping(value = "/")
+    @PostMapping("/")
     @ResponseBody
     public Map<String, String> createPlayer(@RequestBody Map<String, String> request) {
         String playerName = request.get("playerName");
