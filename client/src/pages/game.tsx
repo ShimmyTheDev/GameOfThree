@@ -477,6 +477,7 @@ const Game = () => {
                     onClick={() => {
                       // Clear localStorage when returning to main menu
                       localStorage.removeItem("gameId");
+                      localStorage.removeItem("playerId");
                     }}
                     className="px-6 py-2 bg-[#3c3836] text-[#ebdbb2] border-2 border-[#504945] hover:bg-[#504945] transition-colors text-game-lg"
                   >
