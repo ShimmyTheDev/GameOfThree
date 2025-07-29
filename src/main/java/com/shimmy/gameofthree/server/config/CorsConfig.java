@@ -22,7 +22,7 @@ public class CorsConfig implements WebMvcConfigurer {
                         "http://client:5173",
                         "https://got.shimmy.dev"
                 )
-                .allowedMethods("GET", "POST")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
