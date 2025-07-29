@@ -234,7 +234,6 @@ public class GameService {
         log.info("Found {} inactive games to delete", inactiveGames.size());
         for (Game game : inactiveGames) {
             log.info("Ending inactive game with ID: {}", game.getId());
-            endGame(game.getId(), game.getCurrentPlayer().getId());
             Player winner = game.getPlayers().stream()
                     .filter(p -> !p.getId().equals(game.getCurrentPlayer().getId()))
                     .findFirst()
