@@ -159,7 +159,7 @@ const Play = () => {
           {/* Error Message Display */}
           {errorMessage && (
             <div
-              className="p-3 bg-[#fb4934] bg-opacity-20 border border-[#fb4934] text-[#fb4934] text-game-base text-center rounded-sm"
+              className="p-3 bg-[#fb4934] bg-opacity-20 border border-[#fb4934] text-[#504945] text-game-base text-center rounded-sm"
               style={{
                 animation: "fadeIn 0.3s ease-in-out",
               }}
