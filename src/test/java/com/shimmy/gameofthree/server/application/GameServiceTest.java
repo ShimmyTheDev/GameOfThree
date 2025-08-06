@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,394 +25,263 @@ class GameServiceTest {
     private GameRepository gameRepository;
 
     @Mock
-    private PlayerRepository playerRepository;
-
-    @Mock
     private PlayerService playerService;
 
     @InjectMocks
     private GameService gameService;
 
     private Game testGame;
-    private Player testPlayer1;
-    private Player testPlayer2;
+    private Player player1;
+    private Player player2;
 
     @BeforeEach
     void setUp() {
-        testPlayer1 = new Player();
-        testPlayer1.setId("player1");
-        testPlayer1.setName("Player One");
-        testPlayer1.setIsLookingForGame(false);
+        player1 = new Player("Player 1", false);
+        player1.setId("player1");
 
-        testPlayer2 = new Player();
-        testPlayer2.setId("player2");
-        testPlayer2.setName("Player Two");
-        testPlayer2.setIsLookingForGame(false);
+        player2 = new Player("Player 2", false);
+        player2.setId("player2");
 
         testGame = new Game();
         testGame.setId("game1");
-        testGame.setPlayers(new ArrayList<>(List.of(testPlayer1, testPlayer2)));
+        testGame.setPlayers(new ArrayList<>(List.of(player1, player2)));
+        testGame.setCurrentPlayer(player1);
+        testGame.setCurrentNumber(27);
         testGame.setStatus(Game.GameStatus.IN_PROGRESS);
-        testGame.setCurrentPlayer(testPlayer1);
-        testGame.setCurrentNumber(15);
+        testGame.setLastUpdated(Instant.now());
     }
 
     @Test
-    void createGame_ShouldCreateAndReturnGame() {
-        Game savedGame = new Game();
-        savedGame.setId("game1");
-        when(gameRepository.save(any(Game.class))).thenReturn(savedGame);
+    void createGame_ShouldCreateAndReturnNewGame() {
+        Game newGame = new Game();
+        newGame.setId("newGame");
+        when(gameRepository.save(any(Game.class))).thenReturn(newGame);
 
         Game result = gameService.createGame();
 
         assertNotNull(result);
-        assertEquals("game1", result.getId());
+        assertEquals("newGame", result.getId());
         verify(gameRepository).save(any(Game.class));
     }
 
     @Test
     void addPlayer_WhenValidGameAndPlayer_ShouldAddPlayerToGame() {
-        String gameId = "game1";
-        String playerId = "player3";
-        Player newPlayer = new Player();
-        newPlayer.setId(playerId);
-        newPlayer.setName("Player Three");
+        Game game = new Game();
+        game.setId("game1");
+        game.setPlayers(new ArrayList<>());
 
-        Game gameWithOnePlayer = new Game();
-        gameWithOnePlayer.setId(gameId);
-        gameWithOnePlayer.setPlayers(new ArrayList<>(List.of(testPlayer1)));
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(game));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
+        when(gameRepository.save(any(Game.class))).thenReturn(game);
 
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(gameWithOnePlayer));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(newPlayer));
-        when(gameRepository.save(any(Game.class))).thenReturn(gameWithOnePlayer);
+        gameService.addPlayer("game1", "player1");
 
-        gameService.addPlayer(gameId, playerId);
-
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository).save(any(Game.class));
-    }
-
-    @Test
-    void addPlayer_WhenGameNotFound_ShouldThrowException() {
-        String gameId = "nonexistent";
-        String playerId = "player1";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.addPlayer(gameId, playerId)
-        );
-        assertEquals("Game not found", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository, never()).findById(any());
-    }
-
-    @Test
-    void addPlayer_WhenPlayerNotFound_ShouldThrowException() {
-        String gameId = "game1";
-        String playerId = "nonexistent";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.addPlayer(gameId, playerId)
-        );
-        assertEquals("Player not found", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
+        assertTrue(game.getPlayers().contains(player1));
+        verify(gameRepository).save(game);
     }
 
     @Test
     void startGame_WhenEnoughPlayers_ShouldStartGame() {
-        String gameId = "game1";
-        testGame.setStatus(Game.GameStatus.WAITING_FOR_PLAYERS);
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(gameRepository.save(any(Game.class))).thenReturn(testGame);
+        Game game = new Game();
+        game.setId("game1");
+        game.setPlayers(List.of(player1, player2));
 
-        gameService.startGame(gameId);
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(game));
+        when(gameRepository.save(any(Game.class))).thenReturn(game);
 
-        verify(gameRepository).findById(gameId);
-        verify(gameRepository).save(any(Game.class));
+        gameService.startGame("game1");
+
+        assertEquals(Game.GameStatus.IN_PROGRESS, game.getStatus());
+        assertNotNull(game.getCurrentPlayer());
+        assertTrue(game.getPlayers().contains(game.getCurrentPlayer()));
+        verify(gameRepository).save(game);
     }
 
     @Test
     void startGame_WhenNotEnoughPlayers_ShouldThrowException() {
-        String gameId = "game1";
-        testGame.setPlayers(List.of(testPlayer1)); // Only one player
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+        Game game = new Game();
+        game.setId("game1");
+        game.setPlayers(List.of(player1));
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> gameService.startGame(gameId)
-        );
-        assertEquals("Game cannot start with less than 2 players.", exception.getMessage());
-        verify(gameRepository).findById(gameId);
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(game));
+
+        assertThrows(IllegalStateException.class, () -> gameService.startGame("game1"));
         verify(gameRepository, never()).save(any());
     }
 
     @Test
-    void makeMove_WhenValidMove_ShouldProcessMove() {
-        String gameId = "game1";
-        String playerId = "player1";
-        int move = 1;
-        testGame.setCurrentNumber(0); // (15 + 1) / 3 = 5.33 -> 5
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+    void makeMove_WhenValidMove_ShouldProcessMoveAndUpdateGame() {
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
         when(gameRepository.save(any(Game.class))).thenReturn(testGame);
 
-        gameService.makeMove(gameId, playerId, move);
+        gameService.makeMove("game1", "player1", 0);
 
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository).save(any(Game.class));
+        assertEquals(9, testGame.getCurrentNumber());
+        assertEquals(player2, testGame.getCurrentPlayer());
+        verify(gameRepository).save(testGame);
     }
 
     @Test
-    void makeMove_WhenNotPlayersTurn_ShouldThrowException() {
-        String gameId = "game1";
-        String playerId = "player2"; // It's player1's turn
-        int move = 1;
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer2));
+    void makeMove_WhenWinningMove_ShouldEndGame() {
+        testGame.setCurrentNumber(3);
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
+        when(gameRepository.save(any(Game.class))).thenReturn(testGame);
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> gameService.makeMove(gameId, playerId, move)
-        );
-        assertEquals("It's not your turn to play.", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository, never()).save(any());
+        gameService.makeMove("game1", "player1", 0);
+
+        assertEquals(1, testGame.getCurrentNumber());
+        assertEquals(Game.GameStatus.COMPLETED, testGame.getStatus());
+        assertNull(testGame.getCurrentPlayer());
+        verify(gameRepository).save(testGame);
     }
 
     @Test
     void makeMove_WhenInvalidMove_ShouldThrowException() {
-        String gameId = "game1";
-        String playerId = "player1";
-        int move = 99; // Invalid move
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.makeMove(gameId, playerId, move)
-        );
-        assertEquals("Invalid move. Player can only move 1 or -1.", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
+        assertThrows(IllegalArgumentException.class, () -> gameService.makeMove("game1", "player1", 2));
         verify(gameRepository, never()).save(any());
     }
 
     @Test
-    void makeMove_WhenGameNotInProgress_ShouldThrowException() {
-        String gameId = "game1";
-        String playerId = "player1";
-        int move = 1;
-        testGame.setStatus(Game.GameStatus.COMPLETED);
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+    void makeMove_WhenNotPlayersTurn_ShouldThrowException() {
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player2")).thenReturn(player2);
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> gameService.makeMove(gameId, playerId, move)
-        );
-        assertEquals("Game is not currently in progress.", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
+        assertThrows(IllegalStateException.class, () -> gameService.makeMove("game1", "player2", 0));
         verify(gameRepository, never()).save(any());
     }
 
     @Test
-    void makeMove_WhenMoveResultsInWin_ShouldEndGame() {
-        String gameId = "game1";
-        String playerId = "player1";
-        int move = -1;
-        testGame.setCurrentNumber(3); // (3 + (-1)) / 3 = 0.66 -> 0, but we want to test winning condition
-        // Set it to 4 so (4 + (-1)) / 3 = 1 (winning condition)
-        testGame.setCurrentNumber(4);
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+    void makeMove_WhenMoveNotDivisibleByThree_ShouldThrowException() {
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
+
+        assertThrows(IllegalArgumentException.class, () -> gameService.makeMove("game1", "player1", 1));
+        verify(gameRepository, never()).save(any());
+    }
+
+    @Test
+    void endGame_WhenValidWinner_ShouldEndGameAndSetWinner() {
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
         when(gameRepository.save(any(Game.class))).thenReturn(testGame);
 
-        gameService.makeMove(gameId, playerId, move);
+        gameService.endGame("game1", "player1");
 
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository).save(any(Game.class));
+        assertEquals(Game.GameStatus.COMPLETED, testGame.getStatus());
+        assertNull(testGame.getCurrentPlayer());
+        assertEquals(player1, testGame.getWinner());
+        verify(gameRepository).save(testGame);
     }
 
     @Test
-    void getGameByPlayerId_WhenGameExists_ShouldReturnGame() {
-        String playerId = "player1";
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
-        when(gameRepository.findByPlayersContaining(testPlayer1)).thenReturn(Optional.of(testGame));
+    void endGame_WhenGameNotInProgress_ShouldThrowException() {
+        testGame.setStatus(Game.GameStatus.COMPLETED);
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player1")).thenReturn(player1);
 
-        Game result = gameService.getGameByPlayerId(playerId);
-
-        assertEquals(testGame, result);
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository).findByPlayersContaining(testPlayer1);
+        assertThrows(IllegalStateException.class, () -> gameService.endGame("game1", "player1"));
+        verify(gameRepository, never()).save(any());
     }
 
     @Test
-    void getGameByPlayerId_WhenPlayerNotFound_ShouldThrowException() {
-        String playerId = "nonexistent";
-        when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
+    void endGame_WhenWinnerNotInGame_ShouldThrowException() {
+        Player notInGame = new Player("Not In Game", false);
+        notInGame.setId("player3");
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.getGameByPlayerId(playerId)
-        );
-        assertEquals("Player not found", exception.getMessage());
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository, never()).findByPlayersContaining(any());
-    }
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player3")).thenReturn(notInGame);
 
-    @Test
-    void getGameByPlayerId_WhenGameNotFound_ShouldThrowException() {
-        String playerId = "player1";
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
-        when(gameRepository.findByPlayersContaining(testPlayer1)).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.getGameByPlayerId(playerId)
-        );
-        assertEquals("No game found for player ID: " + playerId, exception.getMessage());
-        verify(playerRepository).findById(playerId);
-        verify(gameRepository).findByPlayersContaining(testPlayer1);
+        assertThrows(IllegalArgumentException.class, () -> gameService.endGame("game1", "player3"));
+        verify(gameRepository, never()).save(any());
     }
 
     @Test
     void getGame_WhenGameExists_ShouldReturnGame() {
-        String gameId = "game1";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
 
-        Game result = gameService.getGame(gameId);
+        Game result = gameService.getGame("game1");
 
-        assertEquals(testGame, result);
-        verify(gameRepository).findById(gameId);
+        assertNotNull(result);
+        assertEquals(testGame.getId(), result.getId());
+        verify(gameRepository).findById("game1");
     }
 
     @Test
-    void getGame_WhenGameNotFound_ShouldThrowException() {
-        String gameId = "nonexistent";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
+    void getGame_WhenGameDoesNotExist_ShouldThrowException() {
+        when(gameRepository.findById("nonexistent")).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.getGame(gameId)
-        );
-        assertEquals("Game not found with ID: " + gameId, exception.getMessage());
-        verify(gameRepository).findById(gameId);
-    }
-
-    @Test
-    void markPlayerLookingForGame_WhenPlayerExists_ShouldUpdatePlayer() {
-        String playerId = "player1";
-        boolean lookingForGame = true;
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
-        when(playerRepository.save(any(Player.class))).thenReturn(testPlayer1);
-
-        gameService.markPlayerLookingForGame(playerId, lookingForGame);
-
-        verify(playerRepository).findById(playerId);
-        verify(playerRepository).save(any(Player.class));
-    }
-
-    @Test
-    void markPlayerLookingForGame_WhenPlayerNotFound_ShouldThrowException() {
-        String playerId = "nonexistent";
-        boolean lookingForGame = true;
-        when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> gameService.markPlayerLookingForGame(playerId, lookingForGame)
-        );
-        assertEquals("Player not found", exception.getMessage());
-        verify(playerRepository).findById(playerId);
-        verify(playerRepository, never()).save(any());
+        assertThrows(IllegalArgumentException.class, () -> gameService.getGame("nonexistent"));
+        verify(gameRepository).findById("nonexistent");
     }
 
     @Test
     void gameMatchmaking_WhenEnoughPlayers_ShouldCreateGame() {
-        List<Player> playersLookingForGame = List.of(testPlayer1, testPlayer2);
-        when(playerRepository.findByIsLookingForGameTrue()).thenReturn(playersLookingForGame);
-        when(gameRepository.save(any(Game.class))).thenReturn(testGame);
-        when(playerRepository.save(any(Player.class))).thenReturn(testPlayer1, testPlayer2);
+        Player matchmakingPlayer1 = new Player("Player 1", true);
+        matchmakingPlayer1.setId("player1");
+        Player matchmakingPlayer2 = new Player("Player 2", true);
+        matchmakingPlayer2.setId("player2");
+
+        when(playerService.getPlayersLookingForGame())
+                .thenReturn(List.of(matchmakingPlayer1, matchmakingPlayer2));
+        when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> {
+            Game savedGame = invocation.getArgument(0);
+            savedGame.setId("newGame");
+            return savedGame;
+        });
 
         gameService.gameMatchmaking();
 
-        verify(playerRepository).findByIsLookingForGameTrue();
         verify(gameRepository).save(any(Game.class));
-        verify(playerRepository, times(2)).save(any(Player.class));
+        verify(playerService).updatePlayer(matchmakingPlayer1);
+        verify(playerService).updatePlayer(matchmakingPlayer2);
+        assertFalse(matchmakingPlayer1.getIsLookingForGame());
+        assertFalse(matchmakingPlayer2.getIsLookingForGame());
     }
 
     @Test
     void gameMatchmaking_WhenNotEnoughPlayers_ShouldNotCreateGame() {
-        List<Player> playersLookingForGame = List.of(testPlayer1); // Only one player
-        when(playerRepository.findByIsLookingForGameTrue()).thenReturn(playersLookingForGame);
+        when(playerService.getPlayersLookingForGame())
+                .thenReturn(List.of(player1));
 
         gameService.gameMatchmaking();
 
-        verify(playerRepository).findByIsLookingForGameTrue();
         verify(gameRepository, never()).save(any());
-        verify(playerRepository, never()).save(any());
+        verify(playerService, never()).updatePlayer(any());
     }
 
     @Test
-    void endGame_WhenValidParameters_ShouldEndGame() {
-        String gameId = "game1";
-        String winnerId = "player1";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
-        when(playerRepository.findById(winnerId)).thenReturn(Optional.of(testPlayer1));
-        when(gameRepository.save(any(Game.class))).thenReturn(testGame);
-
-        gameService.endGame(gameId, winnerId);
-
-        verify(gameRepository).findById(gameId);
-        verify(playerRepository).findById(winnerId);
-        verify(gameRepository).save(any(Game.class));
-    }
-
-    @Test
-    void deleteGame_WhenGameNotInProgress_ShouldDeleteGame() {
-        String gameId = "game1";
+    void cleanUpCompletedGames_ShouldDeleteCompletedGames() {
+        List<Game> completedGames = List.of(testGame);
         testGame.setStatus(Game.GameStatus.COMPLETED);
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
 
-        gameService.deleteGame(gameId);
+        when(gameRepository.findByStatus(Game.GameStatus.COMPLETED))
+                .thenReturn(completedGames);
 
-        verify(gameRepository).findById(gameId);
+        gameService.cleanUpCompletedGames();
+
         verify(gameRepository).delete(testGame);
     }
 
     @Test
-    void deleteGame_WhenGameInProgress_ShouldThrowException() {
-        String gameId = "game1";
-        testGame.setStatus(Game.GameStatus.IN_PROGRESS);
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+    void completeInactiveGames_ShouldEndInactiveGames() {
+        testGame.setLastUpdated(Instant.now().minusSeconds(120));
+        List<Game> inactiveGames = List.of(testGame);
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> gameService.deleteGame(gameId)
-        );
-        assertEquals("Cannot delete a game that is in progress.", exception.getMessage());
-        verify(gameRepository).findById(gameId);
-        verify(gameRepository, never()).delete(any());
-    }
+        when(gameRepository.findByLastUpdatedBefore(any(Instant.class)))
+                .thenReturn(inactiveGames);
+        when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
+        when(playerService.getPlayer("player2")).thenReturn(player2);
+        when(gameRepository.save(any(Game.class))).thenReturn(testGame);
 
-    @Test
-    void getGameStatus_WhenGameExists_ShouldReturnStatus() {
-        String gameId = "game1";
-        when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+        gameService.completeInactiveGames();
 
-        Game.GameStatus result = gameService.getGameStatus(gameId);
-
-        assertEquals(Game.GameStatus.IN_PROGRESS, result);
-        verify(gameRepository).findById(gameId);
+        assertEquals(Game.GameStatus.COMPLETED, testGame.getStatus());
+        assertEquals(player2, testGame.getWinner());
+        verify(gameRepository).save(testGame);
     }
 }

@@ -20,7 +20,7 @@ public class GameService {
     @Autowired
     private GameRepository gameRepository;
     @Autowired
-    private PlayerRepository playerRepository;
+    private PlayerService playerService;
 
     Game createGame() {
         log.info("Creating a new game");
@@ -32,10 +32,8 @@ public class GameService {
 
     void addPlayer(String gameId, String playerId) {
         log.info("Adding player {} to game {}", playerId, gameId);
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        Game game = getGame(gameId);
+        Player player = playerService.getPlayer(playerId);
 
         // Initialize players list if null
         if (game.getPlayers() == null) {
@@ -53,8 +51,7 @@ public class GameService {
 
     public void startGame(String gameId) {
         log.info("Starting game with ID: {}", gameId);
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        Game game = getGame(gameId);
         if (game.getPlayers().size() < 2) {
             log.error("Cannot start game {}: not enough players", gameId);
             throw new IllegalStateException("Game cannot start with less than 2 players.");
@@ -68,10 +65,9 @@ public class GameService {
 
     void endGame(String gameId, String winnerId) {
         log.info("Ending game with ID: {}. Winner: {}", gameId, winnerId);
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-        Player winner = playerRepository.findById(winnerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        Game game = getGame(gameId);
+        Player winner = playerService.getPlayer(winnerId);
+
         if (game.getStatus() != Game.GameStatus.IN_PROGRESS) {
             log.error("Game {} is not in progress. Current status: {}", game.getId(), game.getStatus());
             throw new IllegalStateException("Game is not currently in progress.");
@@ -82,6 +78,7 @@ public class GameService {
         }
         game.setStatus(Game.GameStatus.COMPLETED);
         game.setCurrentPlayer(null);
+        game.setWinner(winner);
         gameRepository.save(game);
         log.info("Game {} ended. Winner: {}. Current status: {}", gameId, winnerId, game.getStatus());
     }
@@ -89,10 +86,8 @@ public class GameService {
     public void makeMove(String gameId, String playerId, int move) {
         log.info("Player {} making move: {} in game {}", playerId, move, gameId);
 
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        Game game = getGame(gameId);
+        Player player = playerService.getPlayer(playerId);
 
         if (game.getStatus() != Game.GameStatus.IN_PROGRESS) {
             log.error("Game {} is not in progress. Current status: {}", game.getId(), game.getStatus());
@@ -156,8 +151,7 @@ public class GameService {
 
     public Game getGameByPlayerId(String playerId) {
         log.info("Fetching game state for player ID: {}", playerId);
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        Player player = playerService.getPlayer(playerId);
         Game game = gameRepository.findByPlayersContaining(player)
                 .orElseThrow(() -> new IllegalArgumentException("No game found for player ID: " + playerId));
         if (game.getStatus() == Game.GameStatus.COMPLETED) {
@@ -178,17 +172,16 @@ public class GameService {
 
     public void markPlayerLookingForGame(String playerId, boolean lookingForGame) {
         log.info("Marking player {} as looking for game: {}", playerId, lookingForGame);
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        Player player = playerService.getPlayer(playerId);
         player.setIsLookingForGame(lookingForGame);
-        playerRepository.save(player);
+        playerService.updatePlayer(player);
         log.info("Player {} marked as looking for game: {}", playerId, lookingForGame);
     }
 
     @Scheduled(fixedRate = 5000) // Runs every five seconds
     public void gameMatchmaking() {
         log.info("Running game matchmaking process");
-        List<Player> playersLookingForGame = playerRepository.findByIsLookingForGameTrue();
+        List<Player> playersLookingForGame = playerService.getPlayersLookingForGame();
         log.info("Found {} players looking for a game", playersLookingForGame.size());
         if (playersLookingForGame.size() < 2) {
             log.info("Not enough players for matchmaking. Current count: {}", playersLookingForGame.size());
@@ -210,15 +203,14 @@ public class GameService {
         // Mark players as no longer looking for game
         playersLookingForGame.get(0).setIsLookingForGame(false);
         playersLookingForGame.get(1).setIsLookingForGame(false);
-        playerRepository.save(playersLookingForGame.get(0));
-        playerRepository.save(playersLookingForGame.get(1));
+        playerService.updatePlayer(playersLookingForGame.get(0));
+        playerService.updatePlayer(playersLookingForGame.get(1));
 
         log.info("Matchmaking successful. Game created with ID: {} and starting number: {}",
                 game.getId(), game.getCurrentNumber());
     }
 
-    @Scheduled(fixedRate = 3600000)
-        // runs every hour
+    @Scheduled(fixedRate = 3600000) // runs every hour
     void cleanUpCompletedGames() {
         log.info("Running cleanup for completed games");
         List<Game> completedGames = gameRepository.findByStatus(Game.GameStatus.COMPLETED);

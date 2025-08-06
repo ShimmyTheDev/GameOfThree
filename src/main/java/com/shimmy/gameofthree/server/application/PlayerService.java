@@ -22,9 +22,7 @@ public class PlayerService {
             log.error("Invalid player name: {}", playerName);
             throw new IllegalArgumentException("Player name must be between 1 and 32 characters.");
         }
-        Player player = new Player();
-        player.setName(playerName);
-        player.setIsLookingForGame(false);
+        Player player = new Player(playerName, false);
 
         return playerRepository.save(player);
     }
@@ -40,31 +38,26 @@ public class PlayerService {
                 .orElseThrow(() -> new IllegalArgumentException("Player not found with ID: " + playerId));
     }
 
-    public Player updatePlayer(String playerId, String playerName, Boolean isLookingForGame) {
-        log.info("Updating player with ID: {}", playerId);
-        if (playerId == null || playerId.isEmpty()) {
-            log.error("Invalid player ID: {}", playerId);
-            throw new IllegalArgumentException("Player ID cannot be null or empty.");
-        }
+    public Player updatePlayer(Player player) {
+        // TODO should I do validation like that?
+        log.info("Updating player with ID: {}", player.getId());
+        Player existingPlayer = getPlayer(player.getId());
 
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found with ID: " + playerId));
-
-        if (playerName != null && !playerName.isEmpty() && playerName.length() <= 32) {
-            player.setName(playerName);
+        if (player.getName() != null && !player.getName().isEmpty() && player.getName().length() <= 32) {
+            existingPlayer.setName(player.getName());
         } else {
-            log.error("Invalid player name: {}", playerName);
+            log.error("Invalid player name: {}", player.getName());
             throw new IllegalArgumentException("Player name must be between 1 and 32 characters.");
         }
 
-        if (isLookingForGame != null) {
-            player.setIsLookingForGame(isLookingForGame);
+        if (player.getIsLookingForGame() != null) {
+            existingPlayer.setIsLookingForGame(player.getIsLookingForGame());
         }
 
-        return playerRepository.save(player);
+        return playerRepository.save(existingPlayer);
     }
 
-    public List<Player> playersLookingForGame() {
+    public List<Player> getPlayersLookingForGame() {
         log.info("Retrieving players looking for a game");
         List<Player> players = new ArrayList<>();
         for (Player player : playerRepository.findAll()) {

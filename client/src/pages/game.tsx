@@ -11,7 +11,7 @@ interface Player {
 interface GameState {
   currentNumber: number;
   turn: "player" | "opponent";
-  gameStatus: "playing" | "won" | "lost";
+  gameStatus: "WAITING_FOR_PLAYERS" | "IN_PROGRESS" | "COMPLETED";
   playerName: string;
   opponentName: string;
 }
@@ -64,9 +64,7 @@ const Game = () => {
 
       if (gameData.status === "COMPLETED") {
         // Game is over
-        const winnerId = gameData.currentPlayer
-          ? gameData.currentPlayer.id
-          : null;
+        const winnerId = gameData.winner.id;
 
         if (winnerId === playerId) {
           setMessage("Congratulations! You won!");
@@ -386,13 +384,12 @@ const Game = () => {
 
               <div className="w-full bg-[#282828] p-4 text-center border border-[#504945] mb-4">
                 <span
-                  className={`${
-                    gameState.gameStatus === "won"
+                  className={`${gameState.gameStatus === "won"
                       ? "text-[#b8bb26]"
                       : gameState.gameStatus === "lost"
-                      ? "text-[#fb4934]"
-                      : "text-[#ebdbb2]"
-                  } text-game-lg`}
+                        ? "text-[#fb4934]"
+                        : "text-[#ebdbb2]"
+                    } text-game-lg`}
                 >
                   {message}
                 </span>
@@ -421,14 +418,13 @@ const Game = () => {
                           gameState.turn !== "player" ||
                           gameState.gameStatus !== "playing"
                         }
-                        className={`w-16 h-16 flex items-center justify-center text-game-xl border-2 ${
-                          selectedAction === action
+                        className={`w-16 h-16 flex items-center justify-center text-game-xl border-2 ${selectedAction === action
                             ? "border-[#fabd2f] bg-[#3c3836] text-[#fabd2f]"
                             : gameState.turn === "player" &&
                               gameState.gameStatus === "playing"
-                            ? "border-[#689d6a] bg-[#282828] text-[#8ec07c] hover:bg-[#3c3836]"
-                            : "border-[#504945] bg-[#282828] text-[#504945] opacity-50 cursor-not-allowed"
-                        } transition-colors`}
+                              ? "border-[#689d6a] bg-[#282828] text-[#8ec07c] hover:bg-[#3c3836]"
+                              : "border-[#504945] bg-[#282828] text-[#504945] opacity-50 cursor-not-allowed"
+                          } transition-colors`}
                       >
                         {action > 0 ? `+${action}` : action}
                       </button>

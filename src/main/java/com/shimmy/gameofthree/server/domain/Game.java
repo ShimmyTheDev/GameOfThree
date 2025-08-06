@@ -25,6 +25,9 @@ public class Game {
     private int currentNumber;
     private GameStatus status = GameStatus.WAITING_FOR_PLAYERS;
     private Instant lastUpdated;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "winner_id")
+    private Player winner;
 
     @PrePersist
     public void generateId() {

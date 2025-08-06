@@ -10,7 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,10 +27,8 @@ class PlayerServiceTest {
 
     @BeforeEach
     void setUp() {
-        testPlayer = new Player();
+        testPlayer = new Player("Test Player", false);
         testPlayer.setId("player1");
-        testPlayer.setName("Test Player");
-        testPlayer.setIsLookingForGame(false);
     }
 
     @Test
@@ -146,17 +143,14 @@ class PlayerServiceTest {
     @Test
     void updatePlayer_WhenValidParameters_ShouldUpdateAndReturnPlayer() {
         String playerId = "player1";
-        String newName = "Updated Player";
         Boolean isLookingForGame = true;
-        Player updatedPlayer = new Player();
+        Player updatedPlayer = new Player("Updated Player", isLookingForGame);
         updatedPlayer.setId(playerId);
-        updatedPlayer.setName(newName);
-        updatedPlayer.setIsLookingForGame(isLookingForGame);
 
         when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer));
         when(playerRepository.save(any(Player.class))).thenReturn(updatedPlayer);
 
-        Player result = playerService.updatePlayer(playerId, newName, isLookingForGame);
+        Player result = playerService.updatePlayer(updatedPlayer);
 
         assertEquals(updatedPlayer, result);
         verify(playerRepository).findById(playerId);
@@ -165,13 +159,11 @@ class PlayerServiceTest {
 
     @Test
     void updatePlayer_WhenPlayerIdIsNull_ShouldThrowException() {
-        String playerId = null;
-        String newName = "Updated Player";
-        Boolean isLookingForGame = true;
+        Player playerWithNullId = new Player("Updated Player", true);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerId, newName, isLookingForGame)
+                () -> playerService.updatePlayer(playerWithNullId)
         );
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
@@ -179,13 +171,12 @@ class PlayerServiceTest {
 
     @Test
     void updatePlayer_WhenPlayerIdIsEmpty_ShouldThrowException() {
-        String playerId = "";
-        String newName = "Updated Player";
-        Boolean isLookingForGame = true;
+        Player playerWithEmptyId = new Player("Updated Player", true);
+        playerWithEmptyId.setId("");
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerId, newName, isLookingForGame)
+                () -> playerService.updatePlayer(playerWithEmptyId)
         );
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
@@ -194,13 +185,14 @@ class PlayerServiceTest {
     @Test
     void updatePlayer_WhenPlayerDoesNotExist_ShouldThrowException() {
         String playerId = "nonexistent";
-        String newName = "Updated Player";
-        Boolean isLookingForGame = true;
+        Player nonexistentPlayer = new Player("Updated Player", true);
+        nonexistentPlayer.setId(playerId);
+
         when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerId, newName, isLookingForGame)
+                () -> playerService.updatePlayer(nonexistentPlayer)
         );
         assertEquals("Player not found with ID: " + playerId, exception.getMessage());
         verify(playerRepository).findById(playerId);
@@ -208,42 +200,20 @@ class PlayerServiceTest {
     }
 
     @Test
-    void updatePlayer_WhenNameIsInvalid_ShouldThrowException() {
-        String playerId = "player1";
-        String newName = ""; // Invalid name
-        Boolean isLookingForGame = true;
-        when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer));
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerId, newName, isLookingForGame)
-        );
-        assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
-        verify(playerRepository).findById(playerId);
-        verify(playerRepository, never()).save(any());
-    }
-
-    @Test
-    void playersLookingForGame_ShouldReturnPlayersLookingForGame() {
-        Player player1 = new Player();
+    void playersLookingForGame_ShouldReturnGetPlayersLookingForGame() {
+        Player player1 = new Player("Player One", true);
         player1.setId("player1");
-        player1.setName("Player One");
-        player1.setIsLookingForGame(true);
 
-        Player player2 = new Player();
+        Player player2 = new Player("Player Two", false);
         player2.setId("player2");
-        player2.setName("Player Two");
-        player2.setIsLookingForGame(false);
 
-        Player player3 = new Player();
+        Player player3 = new Player("Player Three", true);
         player3.setId("player3");
-        player3.setName("Player Three");
-        player3.setIsLookingForGame(true);
 
         List<Player> allPlayers = List.of(player1, player2, player3);
         when(playerRepository.findAll()).thenReturn(allPlayers);
 
-        List<Player> result = playerService.playersLookingForGame();
+        List<Player> result = playerService.getPlayersLookingForGame();
 
         assertEquals(2, result.size());
         assertTrue(result.contains(player1));
@@ -253,21 +223,17 @@ class PlayerServiceTest {
     }
 
     @Test
-    void playersLookingForGame_WhenNoPlayersLookingForGame_ShouldReturnEmptyList() {
-        Player player1 = new Player();
+    void playersLookingForGame_WhenNoGetPlayersLookingForGame_ShouldReturnEmptyList() {
+        Player player1 = new Player("Player One", false);
         player1.setId("player1");
-        player1.setName("Player One");
-        player1.setIsLookingForGame(false);
 
-        Player player2 = new Player();
+        Player player2 = new Player("Player Two", false);
         player2.setId("player2");
-        player2.setName("Player Two");
-        player2.setIsLookingForGame(false);
 
         List<Player> allPlayers = List.of(player1, player2);
         when(playerRepository.findAll()).thenReturn(allPlayers);
 
-        List<Player> result = playerService.playersLookingForGame();
+        List<Player> result = playerService.getPlayersLookingForGame();
 
         assertTrue(result.isEmpty());
         verify(playerRepository).findAll();
