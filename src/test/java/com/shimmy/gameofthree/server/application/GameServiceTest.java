@@ -1,5 +1,8 @@
 package com.shimmy.gameofthree.server.application;
 
+import com.shimmy.gameofthree.server.api.exception.GameNotFoundException;
+import com.shimmy.gameofthree.server.api.exception.InvalidGameStateException;
+import com.shimmy.gameofthree.server.api.exception.InvalidMoveException;
 import com.shimmy.gameofthree.server.domain.Game;
 import com.shimmy.gameofthree.server.domain.Player;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,7 +108,7 @@ class GameServiceTest {
 
         when(gameRepository.findById("game1")).thenReturn(Optional.of(game));
 
-        assertThrows(IllegalStateException.class, () -> gameService.startGame("game1"));
+        assertThrows(InvalidGameStateException.class, () -> gameService.startGame("game1"));
         verify(gameRepository, never()).save(any());
     }
 
@@ -142,7 +145,7 @@ class GameServiceTest {
         when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
         when(playerService.getPlayer("player1")).thenReturn(player1);
 
-        assertThrows(IllegalArgumentException.class, () -> gameService.makeMove("game1", "player1", 2));
+        assertThrows(InvalidMoveException.class, () -> gameService.makeMove("game1", "player1", 2));
         verify(gameRepository, never()).save(any());
     }
 
@@ -151,7 +154,7 @@ class GameServiceTest {
         when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
         when(playerService.getPlayer("player2")).thenReturn(player2);
 
-        assertThrows(IllegalStateException.class, () -> gameService.makeMove("game1", "player2", 0));
+        assertThrows(InvalidGameStateException.class, () -> gameService.makeMove("game1", "player2", 0));
         verify(gameRepository, never()).save(any());
     }
 
@@ -160,7 +163,7 @@ class GameServiceTest {
         when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
         when(playerService.getPlayer("player1")).thenReturn(player1);
 
-        assertThrows(IllegalArgumentException.class, () -> gameService.makeMove("game1", "player1", 1));
+        assertThrows(InvalidMoveException.class, () -> gameService.makeMove("game1", "player1", 1));
         verify(gameRepository, never()).save(any());
     }
 
@@ -184,7 +187,7 @@ class GameServiceTest {
         when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
         when(playerService.getPlayer("player1")).thenReturn(player1);
 
-        assertThrows(IllegalStateException.class, () -> gameService.endGame("game1", "player1"));
+        assertThrows(InvalidGameStateException.class, () -> gameService.endGame("game1", "player1"));
         verify(gameRepository, never()).save(any());
     }
 
@@ -196,7 +199,7 @@ class GameServiceTest {
         when(gameRepository.findById("game1")).thenReturn(Optional.of(testGame));
         when(playerService.getPlayer("player3")).thenReturn(notInGame);
 
-        assertThrows(IllegalArgumentException.class, () -> gameService.endGame("game1", "player3"));
+        assertThrows(InvalidGameStateException.class, () -> gameService.endGame("game1", "player3"));
         verify(gameRepository, never()).save(any());
     }
 
@@ -215,7 +218,7 @@ class GameServiceTest {
     void getGame_WhenGameDoesNotExist_ShouldThrowException() {
         when(gameRepository.findById("nonexistent")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> gameService.getGame("nonexistent"));
+        assertThrows(GameNotFoundException.class, () -> gameService.getGame("nonexistent"));
         verify(gameRepository).findById("nonexistent");
     }
 

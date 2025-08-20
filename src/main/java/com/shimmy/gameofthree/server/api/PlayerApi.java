@@ -1,12 +1,15 @@
 package com.shimmy.gameofthree.server.api;
 
+import com.shimmy.gameofthree.server.api.dto.CreatePlayerRequestDto;
+import com.shimmy.gameofthree.server.api.dto.CreatePlayerResponseDto;
+import com.shimmy.gameofthree.server.api.dto.PlayerDto;
+import com.shimmy.gameofthree.server.api.mapper.PlayerMapper;
 import com.shimmy.gameofthree.server.application.PlayerService;
 import com.shimmy.gameofthree.server.domain.Player;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -15,19 +18,23 @@ public class PlayerApi {
     @Autowired
     private PlayerService playerService;
 
+    @Autowired
+    private PlayerMapper playerMapper;
+
     @PostMapping("/")
-    @ResponseBody
-    public Map<String, String> createPlayer(@RequestBody Map<String, String> request) {
-        String playerName = request.get("playerName");
+    @ResponseStatus(HttpStatus.CREATED)
+    public CreatePlayerResponseDto createPlayer(@RequestBody CreatePlayerRequestDto request) {
+        String playerName = request.getPlayerName();
         log.info("Creating player with name (JSON): {}", playerName);
         Player player = playerService.createPlayer(playerName);
-        return Map.of("playerId", player.getId());
+        return new CreatePlayerResponseDto(player.getId());
     }
 
     @GetMapping("/{playerId}")
-    @ResponseBody
-    public Player getPlayer(@PathVariable String playerId) {
+    @ResponseStatus(HttpStatus.OK)
+    public PlayerDto getPlayer(@PathVariable String playerId) {
         log.info("Retrieving player with ID: {}", playerId);
-        return playerService.getPlayer(playerId);
+        Player player = playerService.getPlayer(playerId);
+        return playerMapper.toDto(player);
     }
 }

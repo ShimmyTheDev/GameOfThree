@@ -1,5 +1,7 @@
 package com.shimmy.gameofthree.server.application;
 
+import com.shimmy.gameofthree.server.api.exception.InvalidPlayerDataException;
+import com.shimmy.gameofthree.server.api.exception.PlayerNotFoundException;
 import com.shimmy.gameofthree.server.domain.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,10 +51,9 @@ class PlayerServiceTest {
     void createPlayer_WhenNameIsNull_ShouldThrowException() {
         String playerName = null;
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.createPlayer(playerName)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.createPlayer(playerName));
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
         verify(playerRepository, never()).save(any());
     }
@@ -61,10 +62,9 @@ class PlayerServiceTest {
     void createPlayer_WhenNameIsEmpty_ShouldThrowException() {
         String playerName = "";
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.createPlayer(playerName)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.createPlayer(playerName));
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
         verify(playerRepository, never()).save(any());
     }
@@ -73,10 +73,9 @@ class PlayerServiceTest {
     void createPlayer_WhenNameTooLong_ShouldThrowException() {
         String playerName = "This is a very long player name that definitely exceeds the maximum allowed length of 32 characters";
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.createPlayer(playerName)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.createPlayer(playerName));
         assertEquals("Player name must be between 1 and 32 characters.", exception.getMessage());
         verify(playerRepository, never()).save(any());
     }
@@ -108,10 +107,9 @@ class PlayerServiceTest {
         String playerId = "nonexistent";
         when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.getPlayer(playerId)
-        );
+        PlayerNotFoundException exception = assertThrows(
+                PlayerNotFoundException.class,
+                () -> playerService.getPlayer(playerId));
         assertEquals("Player not found with ID: " + playerId, exception.getMessage());
         verify(playerRepository).findById(playerId);
     }
@@ -120,10 +118,9 @@ class PlayerServiceTest {
     void getPlayer_WhenPlayerIdIsNull_ShouldThrowException() {
         String playerId = null;
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.getPlayer(playerId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.getPlayer(playerId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
     }
@@ -132,10 +129,9 @@ class PlayerServiceTest {
     void getPlayer_WhenPlayerIdIsEmpty_ShouldThrowException() {
         String playerId = "";
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.getPlayer(playerId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.getPlayer(playerId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
     }
@@ -161,10 +157,9 @@ class PlayerServiceTest {
     void updatePlayer_WhenPlayerIdIsNull_ShouldThrowException() {
         Player playerWithNullId = new Player("Updated Player", true);
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerWithNullId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.updatePlayer(playerWithNullId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
     }
@@ -174,10 +169,9 @@ class PlayerServiceTest {
         Player playerWithEmptyId = new Player("Updated Player", true);
         playerWithEmptyId.setId("");
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.updatePlayer(playerWithEmptyId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.updatePlayer(playerWithEmptyId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).findById(any());
     }
@@ -190,10 +184,9 @@ class PlayerServiceTest {
 
         when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.updatePlayer(nonexistentPlayer)
-        );
+        PlayerNotFoundException exception = assertThrows(
+                PlayerNotFoundException.class,
+                () -> playerService.updatePlayer(nonexistentPlayer));
         assertEquals("Player not found with ID: " + playerId, exception.getMessage());
         verify(playerRepository).findById(playerId);
         verify(playerRepository, never()).save(any());
@@ -252,10 +245,9 @@ class PlayerServiceTest {
     void deletePlayer_WhenPlayerIdIsNull_ShouldThrowException() {
         String playerId = null;
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.deletePlayer(playerId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.deletePlayer(playerId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).deleteById(any());
     }
@@ -264,10 +256,9 @@ class PlayerServiceTest {
     void deletePlayer_WhenPlayerIdIsEmpty_ShouldThrowException() {
         String playerId = "";
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> playerService.deletePlayer(playerId)
-        );
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerService.deletePlayer(playerId));
         assertEquals("Player ID cannot be null or empty.", exception.getMessage());
         verify(playerRepository, never()).deleteById(any());
     }

@@ -1,5 +1,7 @@
 package com.shimmy.gameofthree.server.application;
 
+import com.shimmy.gameofthree.server.api.exception.InvalidPlayerDataException;
+import com.shimmy.gameofthree.server.api.exception.PlayerNotFoundException;
 import com.shimmy.gameofthree.server.domain.Player;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,7 @@ public class PlayerService {
         log.info("Creating player with name: {}", playerName);
         if (playerName == null || playerName.length() == 0 || playerName.length() > 32) {
             log.error("Invalid player name: {}", playerName);
-            throw new IllegalArgumentException("Player name must be between 1 and 32 characters.");
+            throw new InvalidPlayerDataException("Player name must be between 1 and 32 characters.");
         }
         Player player = new Player(playerName, false);
 
@@ -31,11 +33,11 @@ public class PlayerService {
         log.info("Retrieving player with ID: {}", playerId);
         if (playerId == null || playerId.isEmpty()) {
             log.error("Invalid player ID: {}", playerId);
-            throw new IllegalArgumentException("Player ID cannot be null or empty.");
+            throw new InvalidPlayerDataException("Player ID cannot be null or empty.");
         }
 
         return playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found with ID: " + playerId));
+                .orElseThrow(() -> new PlayerNotFoundException("Player not found with ID: " + playerId));
     }
 
     public Player updatePlayer(Player player) {
@@ -47,7 +49,7 @@ public class PlayerService {
             existingPlayer.setName(player.getName());
         } else {
             log.error("Invalid player name: {}", player.getName());
-            throw new IllegalArgumentException("Player name must be between 1 and 32 characters.");
+            throw new InvalidPlayerDataException("Player name must be between 1 and 32 characters.");
         }
 
         if (player.getIsLookingForGame() != null) {
@@ -72,7 +74,7 @@ public class PlayerService {
         log.info("Deleting player with ID: {}", playerId);
         if (playerId == null || playerId.isEmpty()) {
             log.error("Invalid player ID: {}", playerId);
-            throw new IllegalArgumentException("Player ID cannot be null or empty.");
+            throw new InvalidPlayerDataException("Player ID cannot be null or empty.");
         }
 
         playerRepository.deleteById(playerId);

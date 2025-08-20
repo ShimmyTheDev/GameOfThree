@@ -1,5 +1,8 @@
 package com.shimmy.gameofthree.server.application;
 
+import com.shimmy.gameofthree.server.api.exception.GameNotFoundException;
+import com.shimmy.gameofthree.server.api.exception.InvalidGameStateException;
+import com.shimmy.gameofthree.server.api.exception.InvalidMoveException;
 import com.shimmy.gameofthree.server.domain.Game;
 import com.shimmy.gameofthree.server.domain.Player;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +57,7 @@ public class GameService {
         Game game = getGame(gameId);
         if (game.getPlayers().size() < 2) {
             log.error("Cannot start game {}: not enough players", gameId);
-            throw new IllegalStateException("Game cannot start with less than 2 players.");
+            throw new InvalidGameStateException("Game cannot start with less than 2 players.");
         }
         game.setStatus(Game.GameStatus.IN_PROGRESS);
         game.setLastUpdated(Instant.now());
@@ -70,11 +73,11 @@ public class GameService {
 
         if (game.getStatus() != Game.GameStatus.IN_PROGRESS) {
             log.error("Game {} is not in progress. Current status: {}", game.getId(), game.getStatus());
-            throw new IllegalStateException("Game is not currently in progress.");
+            throw new InvalidGameStateException("Game is not currently in progress.");
         }
         if (game.getPlayers() == null || !game.getPlayers().contains(winner)) {
             log.error("Winner {} is not a player in game {}", winnerId, gameId);
-            throw new IllegalArgumentException("Winner must be a player in the game.");
+            throw new InvalidGameStateException("Winner must be a player in the game.");
         }
         game.setStatus(Game.GameStatus.COMPLETED);
         game.setCurrentPlayer(null);
@@ -91,15 +94,15 @@ public class GameService {
 
         if (game.getStatus() != Game.GameStatus.IN_PROGRESS) {
             log.error("Game {} is not in progress. Current status: {}", game.getId(), game.getStatus());
-            throw new IllegalStateException("Game is not currently in progress.");
+            throw new InvalidGameStateException("Game is not currently in progress.");
         }
         if (!game.getCurrentPlayer().equals(player)) {
             log.error("It's not player {}'s turn. Current player: {}", playerId, game.getCurrentPlayer());
-            throw new IllegalStateException("It's not your turn to play.");
+            throw new InvalidGameStateException("It's not your turn to play.");
         }
         if (move != 1 && move != 0 && move != -1) {
             log.error("Invalid move: {}. Player {} can only move -1, 0, or 1.", move, playerId);
-            throw new IllegalArgumentException("Invalid move. Player can only move -1, 0, or 1.");
+            throw new InvalidMoveException("Invalid move. Player can only move -1, 0, or 1.");
         }
 
         // Calculate the number after adding the move
@@ -109,7 +112,7 @@ public class GameService {
         if (numberAfterMove % 3 != 0) {
             log.error("Invalid move: {}. Number {} + {} = {} is not divisible by 3.",
                     move, game.getCurrentNumber(), move, numberAfterMove);
-            throw new IllegalArgumentException("Move must result in a number divisible by 3.");
+            throw new InvalidMoveException("Move must result in a number divisible by 3.");
         }
 
         // Process the move: divide by 3
@@ -133,8 +136,7 @@ public class GameService {
                     game.getPlayers().stream()
                             .filter(p -> !p.getId().equals(playerId))
                             .findFirst()
-                            .orElseThrow(() -> new IllegalStateException("No other player found"))
-            );
+                            .orElseThrow(() -> new InvalidGameStateException("No other player found")));
             game = gameRepository.save(game);
             log.info("Move processed. New number: {}. Next turn: {}", newNumber, game.getCurrentPlayer().getName());
         }
@@ -143,7 +145,7 @@ public class GameService {
     Game.GameStatus getGameStatus(String gameId) {
         log.info("Fetching game state for game ID: {}", gameId);
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+                .orElseThrow(() -> new GameNotFoundException("Game not found"));
 
         log.info("Game state: {}", game);
         return game.getStatus();
@@ -153,7 +155,7 @@ public class GameService {
         log.info("Fetching game state for player ID: {}", playerId);
         Player player = playerService.getPlayer(playerId);
         Game game = gameRepository.findByPlayersContaining(player)
-                .orElseThrow(() -> new IllegalArgumentException("No game found for player ID: " + playerId));
+                .orElseThrow(() -> new GameNotFoundException("No game found for player ID: " + playerId));
         if (game.getStatus() == Game.GameStatus.COMPLETED) {
             return null; // Game is completed, return null
         }
@@ -165,7 +167,7 @@ public class GameService {
     public Game getGame(String gameId) {
         log.info("Fetching game by ID: {}", gameId);
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found with ID: " + gameId));
+                .orElseThrow(() -> new GameNotFoundException("Game not found with ID: " + gameId));
         log.info("Game found: {}", game);
         return game;
     }
@@ -233,7 +235,7 @@ public class GameService {
             Player winner = game.getPlayers().stream()
                     .filter(p -> !p.getId().equals(game.getCurrentPlayer().getId()))
                     .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No other player found"));
+                    .orElseThrow(() -> new InvalidGameStateException("No other player found"));
             endGame(game.getId(), winner.getId());
         }
         log.info("Cleanup of inactive games finished");
@@ -242,11 +244,11 @@ public class GameService {
     void deleteGame(String gameId) {
         log.info("Deleting game with ID: {}", gameId);
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+                .orElseThrow(() -> new GameNotFoundException("Game not found"));
 
         if (game.getStatus() == Game.GameStatus.IN_PROGRESS) {
             log.error("Cannot delete game {}: it is currently in progress", gameId);
-            throw new IllegalStateException("Cannot delete a game that is in progress.");
+            throw new InvalidGameStateException("Cannot delete a game that is in progress.");
         }
 
         gameRepository.delete(game);

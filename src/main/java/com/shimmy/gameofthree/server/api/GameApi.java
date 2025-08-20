@@ -1,9 +1,13 @@
 package com.shimmy.gameofthree.server.api;
 
+import com.shimmy.gameofthree.server.api.dto.GameDto;
+import com.shimmy.gameofthree.server.api.dto.MakeMoveRequestDto;
+import com.shimmy.gameofthree.server.api.dto.MakeMoveResponseDto;
+import com.shimmy.gameofthree.server.api.exception.GameNotFoundException;
+import com.shimmy.gameofthree.server.api.mapper.GameMapper;
 import com.shimmy.gameofthree.server.application.GameService;
 import com.shimmy.gameofthree.server.domain.Game;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,30 +16,30 @@ public class GameApi {
     @Autowired
     GameService gameService;
 
+    @Autowired
+    GameMapper gameMapper;
+
     @GetMapping("/matchmaking")
-    public ResponseEntity<Game> getPlayersGame(@RequestParam String playerId) {
+    public GameDto getPlayersGame(@RequestParam String playerId) {
         try {
             Game existingGame = gameService.getGameByPlayerId(playerId);
-            return ResponseEntity.ok(existingGame);
-        } catch (IllegalArgumentException e) {
+            return gameMapper.toDto(existingGame);
+        } catch (GameNotFoundException e) {
             gameService.markPlayerLookingForGame(playerId, true);
-            return ResponseEntity.ok(null);
+            return null;
         }
     }
 
     @PostMapping("/move")
-    public ResponseEntity<String> makeMove(@RequestParam String gameId, @RequestParam String playerId, @RequestParam int move) {
-        try {
-            gameService.makeMove(gameId, playerId, move);
-            return ResponseEntity.ok("Move processed successfully");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public MakeMoveResponseDto makeMove(@RequestBody MakeMoveRequestDto request) {
+        gameService.makeMove(request.getGameId(), request.getPlayerId(), request.getMove());
+        Game updatedGame = gameService.getGame(request.getGameId());
+        return new MakeMoveResponseDto("Move processed successfully", gameMapper.toDto(updatedGame));
     }
 
     @GetMapping("/{gameId}")
-    @ResponseBody
-    public Game getGame(@PathVariable String gameId) {
-        return gameService.getGame(gameId);
+    public GameDto getGame(@PathVariable String gameId) {
+        Game game = gameService.getGame(gameId);
+        return gameMapper.toDto(game);
     }
 }
