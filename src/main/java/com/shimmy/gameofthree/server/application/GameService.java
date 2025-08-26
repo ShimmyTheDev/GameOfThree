@@ -5,6 +5,8 @@ import com.shimmy.gameofthree.server.api.exception.InvalidGameStateException;
 import com.shimmy.gameofthree.server.api.exception.InvalidMoveException;
 import com.shimmy.gameofthree.server.domain.Game;
 import com.shimmy.gameofthree.server.domain.Player;
+import com.shimmy.gameofthree.server.domain.event.GameEvent;
+import com.shimmy.gameofthree.server.domain.event.GameMatchmakingEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +26,8 @@ public class GameService {
     private GameRepository gameRepository;
     @Autowired
     private PlayerService playerService;
+    @Autowired
+    private GamePublisher gameEventPublisher;
 
     Game createGame() {
         log.info("Creating a new game");
@@ -142,15 +146,6 @@ public class GameService {
         }
     }
 
-    Game.GameStatus getGameStatus(String gameId) {
-        log.info("Fetching game state for game ID: {}", gameId);
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new GameNotFoundException("Game not found"));
-
-        log.info("Game state: {}", game);
-        return game.getStatus();
-    }
-
     public Game getGameByPlayerId(String playerId) {
         log.info("Fetching game state for player ID: {}", playerId);
         Player player = playerService.getPlayer(playerId);
@@ -172,17 +167,8 @@ public class GameService {
         return game;
     }
 
-    public void markPlayerLookingForGame(String playerId, boolean lookingForGame) {
-        log.info("Marking player {} as looking for game: {}", playerId, lookingForGame);
-        Player player = playerService.getPlayer(playerId);
-        player.setIsLookingForGame(lookingForGame);
-        playerService.updatePlayer(player);
-        log.info("Player {} marked as looking for game: {}", playerId, lookingForGame);
-    }
-
     @Scheduled(fixedRate = 5000) // Runs every five seconds
     public void gameMatchmaking() {
-        log.info("Running game matchmaking process");
         List<Player> playersLookingForGame = playerService.getPlayersLookingForGame();
         log.info("Found {} players looking for a game", playersLookingForGame.size());
         if (playersLookingForGame.size() < 2) {
@@ -190,26 +176,46 @@ public class GameService {
             return;
         }
 
-        // Create game with initial random number
-        Game game = new Game();
-        game.setPlayers(List.of(playersLookingForGame.get(0), playersLookingForGame.get(1)));
-        game.setStatus(Game.GameStatus.IN_PROGRESS);
-        game.setCurrentPlayer(playersLookingForGame.get(new Random().nextInt(2)));
+        // Create game and set up initial state
+        Game game = createGame();
+        Player player1 = playersLookingForGame.get(0);
+        Player player2 = playersLookingForGame.get(1);
 
-        // Set initial random number for the game (between 10 and 100)
-        game.setCurrentNumber(new Random().nextInt(91) + 10); // Random number between 10-100
+        // Set up game state
+        game.setPlayers(List.of(player1, player2));
+        game.setStatus(Game.GameStatus.IN_PROGRESS);
+        Player currentPlayer = playersLookingForGame.get(new Random().nextInt(2));
+        game.setCurrentPlayer(currentPlayer);
+        int initialNumber = new Random().nextInt(91) + 10; // Random number between 10-100
+        game.setCurrentNumber(initialNumber);
         game.setLastUpdated(Instant.now());
 
-        game = gameRepository.save(game);
+        // Save game state
+        gameRepository.save(game);
 
-        // Mark players as no longer looking for game
-        playersLookingForGame.get(0).setIsLookingForGame(false);
-        playersLookingForGame.get(1).setIsLookingForGame(false);
-        playerService.updatePlayer(playersLookingForGame.get(0));
-        playerService.updatePlayer(playersLookingForGame.get(1));
+        // Emit matchmaking event
+       GameMatchmakingEvent gameMatchmakingEvent = new GameMatchmakingEvent(
+               game.getId(),
+               player1.getId(),
+               player2.getId(),
+               initialNumber,
+               currentPlayer.getId()
+       );
+        gameEventPublisher.emit(new GameEvent<>(
+                java.util.UUID.randomUUID().toString(),
+                game.getId(),
+                GameMatchmakingEvent.class.getSimpleName(),
+                gameMatchmakingEvent
+        ));
 
-        log.info("Matchmaking successful. Game created with ID: {} and starting number: {}",
-                game.getId(), game.getCurrentNumber());
+        // Update players' status
+        player1.setIsLookingForGame(false);
+        player2.setIsLookingForGame(false);
+        playerService.updatePlayer(player1);
+        playerService.updatePlayer(player2);
+
+        log.info("Game {} created and started between players {} and {}",
+                game.getId(), player1.getName(), player2.getName());
     }
 
     @Scheduled(fixedRate = 3600000) // runs every hour

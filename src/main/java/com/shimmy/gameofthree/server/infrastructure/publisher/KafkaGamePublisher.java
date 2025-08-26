@@ -24,4 +24,3 @@ public class KafkaGamePublisher implements GamePublisher {
         kafkaTemplate.send(gameEventsTopic, event.getGameId(), event);
     }
 }
-

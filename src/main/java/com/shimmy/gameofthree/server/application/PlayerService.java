@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -20,12 +21,11 @@ public class PlayerService {
 
     public Player createPlayer(String playerName) {
         log.info("Creating player with name: {}", playerName);
-        if (playerName == null || playerName.length() == 0 || playerName.length() > 32) {
+        if (playerName == null || playerName.isEmpty() || playerName.length() > 32) {
             log.error("Invalid player name: {}", playerName);
             throw new InvalidPlayerDataException("Player name must be between 1 and 32 characters.");
         }
         Player player = new Player(playerName, false);
-
         return playerRepository.save(player);
     }
 
@@ -57,6 +57,14 @@ public class PlayerService {
         }
 
         return playerRepository.save(existingPlayer);
+    }
+
+    public Player setPlayerIsLookingForGame(String playerId, boolean isLookingForGame) {
+        log.info("Updating player with ID: {}", playerId);
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException("Player not found with ID: " + playerId));
+        player.setIsLookingForGame(isLookingForGame);
+        return playerRepository.save(player);
     }
 
     public List<Player> getPlayersLookingForGame() {

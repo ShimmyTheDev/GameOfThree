@@ -3,6 +3,7 @@ package com.shimmy.gameofthree.server.api;
 import com.shimmy.gameofthree.server.api.dto.CreatePlayerRequestDto;
 import com.shimmy.gameofthree.server.api.dto.CreatePlayerResponseDto;
 import com.shimmy.gameofthree.server.api.dto.PlayerDto;
+import com.shimmy.gameofthree.server.api.dto.PlayerEnterMatchmakingRequestDto;
 import com.shimmy.gameofthree.server.api.mapper.PlayerMapper;
 import com.shimmy.gameofthree.server.application.PlayerService;
 import com.shimmy.gameofthree.server.domain.Player;
@@ -28,6 +29,16 @@ public class PlayerApi {
         log.info("Creating player with name (JSON): {}", playerName);
         Player player = playerService.createPlayer(playerName);
         return new CreatePlayerResponseDto(player.getId());
+    }
+
+    @PostMapping("/matchmaking")
+    @ResponseStatus(HttpStatus.OK)
+    public PlayerDto enterMatchmaking(@RequestBody PlayerEnterMatchmakingRequestDto request) {
+        log.info("Player {} entering matchmaking", request.getPlayerId());
+        Player player = playerService.getPlayer(request.getPlayerId());
+        Player updatedPlayer = playerService.setPlayerIsLookingForGame(player.getId(), true);
+        log.info("Player {} marked as looking for game", request.getPlayerId());
+        return playerMapper.toDto(updatedPlayer);
     }
 
     @GetMapping("/{playerId}")

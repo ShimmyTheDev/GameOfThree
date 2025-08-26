@@ -5,9 +5,12 @@ import com.shimmy.gameofthree.server.api.exception.InvalidGameStateException;
 import com.shimmy.gameofthree.server.api.exception.InvalidMoveException;
 import com.shimmy.gameofthree.server.domain.Game;
 import com.shimmy.gameofthree.server.domain.Player;
+import com.shimmy.gameofthree.server.domain.event.GameEvent;
+import com.shimmy.gameofthree.server.domain.event.GameMatchmakingEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,6 +32,9 @@ class GameServiceTest {
 
     @Mock
     private PlayerService playerService;
+
+    @Mock
+    private GamePublisher gameEventPublisher;
 
     @InjectMocks
     private GameService gameService;
@@ -229,17 +235,48 @@ class GameServiceTest {
         Player matchmakingPlayer2 = new Player("Player 2", true);
         matchmakingPlayer2.setId("player2");
 
+        Game newGame = new Game();
+        newGame.setId("game1");
+
         when(playerService.getPlayersLookingForGame())
                 .thenReturn(List.of(matchmakingPlayer1, matchmakingPlayer2));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> {
             Game savedGame = invocation.getArgument(0);
-            savedGame.setId("newGame");
+            savedGame.setId("game1");
             return savedGame;
         });
 
         gameService.gameMatchmaking();
 
-        verify(gameRepository).save(any(Game.class));
+        ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
+        verify(gameRepository, times(2)).save(gameCaptor.capture());
+
+        Game savedGame = gameCaptor.getValue();
+        assertEquals(Game.GameStatus.IN_PROGRESS, savedGame.getStatus());
+        assertEquals(2, savedGame.getPlayers().size());
+        assertTrue(savedGame.getPlayers().contains(matchmakingPlayer1));
+        assertTrue(savedGame.getPlayers().contains(matchmakingPlayer2));
+        assertTrue(savedGame.getCurrentNumber() >= 10 && savedGame.getCurrentNumber() <= 100);
+        assertNotNull(savedGame.getLastUpdated());
+        assertTrue(savedGame.getCurrentPlayer().equals(matchmakingPlayer1) ||
+                  savedGame.getCurrentPlayer().equals(matchmakingPlayer2));
+
+        ArgumentCaptor<GameEvent<?>> eventCaptor = ArgumentCaptor.forClass(GameEvent.class);
+        verify(gameEventPublisher).emit(eventCaptor.capture());
+
+        GameEvent<?> capturedEvent = eventCaptor.getValue();
+        assertEquals("game1", capturedEvent.getGameId());
+        assertEquals(GameMatchmakingEvent.class.getSimpleName(), capturedEvent.getType());
+        assertNotNull(capturedEvent.getId());
+
+        GameMatchmakingEvent matchmakingEvent = (GameMatchmakingEvent) capturedEvent.getData();
+        assertEquals("game1", matchmakingEvent.getGameId());
+        assertEquals(matchmakingPlayer1.getId(), matchmakingEvent.getPlayer1Id());
+        assertEquals(matchmakingPlayer2.getId(), matchmakingEvent.getPlayer2Id());
+        assertNotNull(matchmakingEvent.getInitialNumber());
+        assertTrue(matchmakingEvent.getCurrentPlayerId().equals(matchmakingPlayer1.getId()) ||
+                  matchmakingEvent.getCurrentPlayerId().equals(matchmakingPlayer2.getId()));
+
         verify(playerService).updatePlayer(matchmakingPlayer1);
         verify(playerService).updatePlayer(matchmakingPlayer2);
         assertFalse(matchmakingPlayer1.getIsLookingForGame());

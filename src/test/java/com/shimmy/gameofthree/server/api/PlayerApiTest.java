@@ -3,6 +3,7 @@ package com.shimmy.gameofthree.server.api;
 import com.shimmy.gameofthree.server.api.dto.CreatePlayerRequestDto;
 import com.shimmy.gameofthree.server.api.dto.CreatePlayerResponseDto;
 import com.shimmy.gameofthree.server.api.dto.PlayerDto;
+import com.shimmy.gameofthree.server.api.dto.PlayerEnterMatchmakingRequestDto;
 import com.shimmy.gameofthree.server.api.exception.InvalidPlayerDataException;
 import com.shimmy.gameofthree.server.api.exception.PlayerNotFoundException;
 import com.shimmy.gameofthree.server.api.mapper.PlayerMapper;
@@ -269,5 +270,116 @@ class PlayerApiTest {
         assertNotNull(response);
         assertEquals("player5", response.getPlayerId());
         verify(playerService).createPlayer(playerName);
+    }
+
+    @Test
+    void enterMatchmaking_WhenValidPlayerId_ShouldReturnUpdatedPlayerDto() {
+        String playerId = "player1";
+        PlayerEnterMatchmakingRequestDto request = new PlayerEnterMatchmakingRequestDto(playerId);
+        
+        Player player = new Player();
+        player.setId(playerId);
+        player.setName("Test Player");
+        player.setIsLookingForGame(false);
+        
+        Player updatedPlayer = new Player();
+        updatedPlayer.setId(playerId);
+        updatedPlayer.setName("Test Player");
+        updatedPlayer.setIsLookingForGame(true);
+        
+        PlayerDto updatedPlayerDto = new PlayerDto();
+        updatedPlayerDto.setId(playerId);
+        updatedPlayerDto.setName("Test Player");
+        updatedPlayerDto.setIsLookingForGame(true);
+
+        when(playerService.getPlayer(playerId)).thenReturn(player);
+        when(playerService.setPlayerIsLookingForGame(player.getId(), true)).thenReturn(updatedPlayer);
+        when(playerMapper.toDto(updatedPlayer)).thenReturn(updatedPlayerDto);
+
+        PlayerDto response = playerApi.enterMatchmaking(request);
+
+        assertNotNull(response);
+        assertEquals(playerId, response.getId());
+        assertEquals("Test Player", response.getName());
+        assertTrue(response.getIsLookingForGame());
+        verify(playerService).getPlayer(playerId);
+        verify(playerService).setPlayerIsLookingForGame(player.getId(), true);
+        verify(playerMapper).toDto(updatedPlayer);
+    }
+
+    @Test
+    void enterMatchmaking_WhenPlayerNotFound_ShouldThrowException() {
+        String playerId = "nonexistent";
+        PlayerEnterMatchmakingRequestDto request = new PlayerEnterMatchmakingRequestDto(playerId);
+        
+        when(playerService.getPlayer(playerId))
+                .thenThrow(new PlayerNotFoundException("Player not found with ID: " + playerId));
+
+        PlayerNotFoundException exception = assertThrows(
+                PlayerNotFoundException.class,
+                () -> playerApi.enterMatchmaking(request)
+        );
+        assertEquals("Player not found with ID: " + playerId, exception.getMessage());
+        verify(playerService).getPlayer(playerId);
+    }
+
+    @Test
+    void enterMatchmaking_WhenInvalidPlayerId_ShouldThrowException() {
+        String playerId = null;
+        PlayerEnterMatchmakingRequestDto request = new PlayerEnterMatchmakingRequestDto(playerId);
+        
+        when(playerService.getPlayer(playerId))
+                .thenThrow(new InvalidPlayerDataException("Player ID cannot be null or empty."));
+
+        InvalidPlayerDataException exception = assertThrows(
+                InvalidPlayerDataException.class,
+                () -> playerApi.enterMatchmaking(request)
+        );
+        assertEquals("Player ID cannot be null or empty.", exception.getMessage());
+        verify(playerService).getPlayer(playerId);
+    }
+
+    @Test
+    void setPlayerIsLookingForGame_WhenPlayerExists_ShouldUpdateStatus() {
+        String playerId = "player1";
+        PlayerEnterMatchmakingRequestDto request = new PlayerEnterMatchmakingRequestDto(playerId);
+        Player player = new Player();
+        player.setId(playerId);
+        player.setName("Test Player");
+        player.setIsLookingForGame(false);
+
+        Player updatedPlayer = new Player();
+        updatedPlayer.setId(playerId);
+        updatedPlayer.setName("Test Player");
+        updatedPlayer.setIsLookingForGame(true);
+
+        PlayerDto expectedDto = new PlayerDto();
+        expectedDto.setId(playerId);
+        expectedDto.setName("Test Player");
+        expectedDto.setIsLookingForGame(true);
+
+        when(playerService.getPlayer(playerId)).thenReturn(player);
+        when(playerService.setPlayerIsLookingForGame(playerId, true)).thenReturn(updatedPlayer);
+        when(playerMapper.toDto(updatedPlayer)).thenReturn(expectedDto);
+
+        PlayerDto response = playerApi.enterMatchmaking(request);
+
+        assertNotNull(response);
+        assertTrue(response.getIsLookingForGame());
+        assertEquals(playerId, response.getId());
+        verify(playerService).getPlayer(playerId);
+        verify(playerService).setPlayerIsLookingForGame(playerId, true);
+    }
+
+    @Test
+    void setPlayerIsLookingForGame_WhenPlayerNotFound_ShouldThrowException() {
+        String playerId = "nonexistent";
+        PlayerEnterMatchmakingRequestDto request = new PlayerEnterMatchmakingRequestDto(playerId);
+
+        when(playerService.getPlayer(playerId))
+                .thenThrow(new PlayerNotFoundException("Player not found with ID: " + playerId));
+
+        assertThrows(PlayerNotFoundException.class, () -> playerApi.enterMatchmaking(request));
+        verify(playerService).getPlayer(playerId);
     }
 }

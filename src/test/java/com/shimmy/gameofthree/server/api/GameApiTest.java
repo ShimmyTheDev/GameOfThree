@@ -63,52 +63,14 @@ class GameApiTest {
     }
 
     @Test
-    void getPlayersGame_WhenGameExists_ShouldReturnGameDto() {
-        // Given
-        String playerId = "player1";
-        when(gameService.getGameByPlayerId(playerId)).thenReturn(testGame);
-        when(gameMapper.toDto(testGame)).thenReturn(testGameDto);
-
-        // When
-        GameDto response = gameApi.getPlayersGame(playerId);
-
-        // Then
-        assertEquals(testGameDto, response);
-        verify(gameService).getGameByPlayerId(playerId);
-        verify(gameMapper).toDto(testGame);
-        verifyNoMoreInteractions(gameService);
-    }
-
-    @Test
-    void getPlayersGame_WhenGameDoesNotExist_ShouldMarkPlayerLookingAndReturnNull() {
-        // Given
-        String playerId = "player1";
-        when(gameService.getGameByPlayerId(playerId))
-                .thenThrow(new GameNotFoundException("No game found"));
-        doNothing().when(gameService).markPlayerLookingForGame(playerId, true);
-
-        // When
-        GameDto response = gameApi.getPlayersGame(playerId);
-
-        // Then
-        assertNull(response);
-        verify(gameService).getGameByPlayerId(playerId);
-        verify(gameService).markPlayerLookingForGame(playerId, true);
-        verifyNoInteractions(gameMapper);
-    }
-
-    @Test
     void makeMove_WhenValidMove_ShouldReturnSuccessResponse() {
-        // Given
         MakeMoveRequestDto request = new MakeMoveRequestDto("game1", "player1", 1);
         doNothing().when(gameService).makeMove("game1", "player1", 1);
         when(gameService.getGame("game1")).thenReturn(testGame);
         when(gameMapper.toDto(testGame)).thenReturn(testGameDto);
 
-        // When
         MakeMoveResponseDto response = gameApi.makeMove(request);
 
-        // Then
         assertEquals("Move processed successfully", response.getMessage());
         assertEquals(testGameDto, response.getGame());
         verify(gameService).makeMove("game1", "player1", 1);
@@ -118,13 +80,11 @@ class GameApiTest {
 
     @Test
     void makeMove_WhenInvalidGameState_ShouldThrowException() {
-        // Given
         MakeMoveRequestDto request = new MakeMoveRequestDto("game1", "player1", 1);
         String errorMessage = "It's not your turn to play.";
         doThrow(new InvalidGameStateException(errorMessage))
                 .when(gameService).makeMove("game1", "player1", 1);
 
-        // When & Then
         InvalidGameStateException exception = assertThrows(
                 InvalidGameStateException.class,
                 () -> gameApi.makeMove(request));
@@ -136,13 +96,11 @@ class GameApiTest {
 
     @Test
     void makeMove_WhenInvalidMove_ShouldThrowException() {
-        // Given
         MakeMoveRequestDto request = new MakeMoveRequestDto("game1", "player1", 5);
         String errorMessage = "Invalid move. Player can only move -1, 0, or 1.";
         doThrow(new InvalidMoveException(errorMessage))
                 .when(gameService).makeMove("game1", "player1", 5);
 
-        // When & Then
         InvalidMoveException exception = assertThrows(
                 InvalidMoveException.class,
                 () -> gameApi.makeMove(request));
@@ -154,15 +112,12 @@ class GameApiTest {
 
     @Test
     void getGame_WhenGameExists_ShouldReturnGameDto() {
-        // Given
         String gameId = "game1";
         when(gameService.getGame(gameId)).thenReturn(testGame);
         when(gameMapper.toDto(testGame)).thenReturn(testGameDto);
 
-        // When
         GameDto result = gameApi.getGame(gameId);
 
-        // Then
         assertEquals(testGameDto, result);
         verify(gameService).getGame(gameId);
         verify(gameMapper).toDto(testGame);
@@ -170,12 +125,10 @@ class GameApiTest {
 
     @Test
     void getGame_WhenGameDoesNotExist_ShouldThrowException() {
-        // Given
         String gameId = "nonexistent";
         when(gameService.getGame(gameId))
                 .thenThrow(new GameNotFoundException("Game not found"));
 
-        // When & Then
         assertThrows(GameNotFoundException.class, () -> gameApi.getGame(gameId));
         verify(gameService).getGame(gameId);
         verifyNoInteractions(gameMapper);
